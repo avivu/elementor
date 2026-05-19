@@ -109,6 +109,11 @@ use Elementor\Modules\AtomicWidgets\Styles\Size_Constants;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Schema;
 use Elementor\Modules\AtomicWidgets\Database\Atomic_Widgets_Database_Updater;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Tabs\Atomic_Tab_Content\Atomic_Tab_Content;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video\Atomic_Background_Video;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Overlay\Atomic_Background_Video_Overlay;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Controls\Atomic_Background_Video_Controls;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Play_Btn\Atomic_Background_Video_Play_Btn;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Pause_Btn\Atomic_Background_Video_Pause_Btn;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form_Promotion;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Form_Success_Message\Form_Success_Message;
@@ -311,6 +316,12 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Tab() );
 		$elements_manager->register_element_type( new Atomic_Tabs_Content_Area() );
 		$elements_manager->register_element_type( new Atomic_Tab_Content() );
+
+		$elements_manager->register_element_type( new Atomic_Background_Video() );
+		$elements_manager->register_element_type( new Atomic_Background_Video_Overlay() );
+		$elements_manager->register_element_type( new Atomic_Background_Video_Controls() );
+		$elements_manager->register_element_type( new Atomic_Background_Video_Play_Btn() );
+		$elements_manager->register_element_type( new Atomic_Background_Video_Pause_Btn() );
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
 			$elements_manager->register_element_type( new Atomic_Form() );

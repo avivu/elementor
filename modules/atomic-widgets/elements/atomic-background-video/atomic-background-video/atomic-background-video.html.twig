@@ -1,0 +1,37 @@
+{% set classes = ['e-con', 'e-atomic-element', base_styles.base] | merge(settings.classes | default([])) | join(' ') %}
+<div class="{{ classes }} {{ editor_classes | default('') }}"
+    data-id="{{ id }}"
+    data-element_type="{{ type }}"
+    data-e-type="{{ type }}"
+    data-interaction-id="{{ interaction_id }}"
+    data-interactions="{{ interactions | json_encode | e('html_attr') }}"
+    x-data="{ isPlaying: false }"
+    {% if settings._cssid is defined and settings._cssid is not empty %}
+        id="{{ settings._cssid | e('html_attr') }}"
+    {% endif %}
+    {% if settings.attributes is defined and settings.attributes is not empty %}
+        {{ settings.attributes | raw }}
+    {% endif %}
+    {{ editor_attributes | default('') | raw }}>
+    {% if settings.source.url is not empty %}
+        <video
+            x-ref="video"
+            style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;"
+            {% if settings.autoplay %}autoplay{% endif %}
+            {% if settings.mute %}muted{% endif %}
+            {% if settings.loop %}loop{% endif %}
+            playsinline
+            @play="isPlaying = true"
+            @pause="isPlaying = false"
+        >
+            <source src="{{ settings.source.url | e('full_url') }}">
+        </video>
+    {% else %}
+        <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.6902 8.92189C18.3227 8.56844 19.0991 8.58381 19.7162 8.96355L54.3829 30.2969C54.9738 30.661 55.3334 31.3059 55.3334 32C55.3334 32.6941 54.9738 33.339 54.3829 33.7031L19.7162 55.0365C19.0991 55.4162 18.3227 55.4316 17.6902 55.0781C17.0584 54.7245 16.6667 54.0574 16.6667 53.3333V10.6667L16.685 10.3984C16.7685 9.7807 17.1373 9.23132 17.6902 8.92189ZM20.6667 49.7526L49.5157 32L20.6667 14.2448V49.7526Z" fill="white" fill-opacity="0.7"/>
+            </svg>
+        </div>
+    {% endif %}
+    <!-- elementor-children-placeholder -->
+</div>
