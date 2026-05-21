@@ -10,6 +10,9 @@ use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Back
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Controls\Atomic_Background_Video_Controls;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
+use Elementor\Modules\AtomicWidgets\Elements\Loader\Frontend_Assets_Loader;
+use Elementor\Plugin;
+use Elementor\Utils;
 use Elementor\Modules\AtomicWidgets\PropDependencies\Manager as Dependency_Manager;
 use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
@@ -171,6 +174,23 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 				],
 			],
 		];
+	}
+
+	public function get_script_depends() {
+		return array_merge( parent::get_script_depends(), [ 'elementor-background-video-handler' ] );
+	}
+
+	public function register_frontend_handlers() {
+		$assets_url = ELEMENTOR_ASSETS_URL;
+		$min_suffix = ( Utils::is_script_debug() || Utils::is_elementor_tests() ) ? '' : '.min';
+
+		wp_register_script(
+			'elementor-background-video-handler',
+			"{$assets_url}js/background-video-handler{$min_suffix}.js",
+			[ Frontend_Assets_Loader::FRONTEND_HANDLERS_HANDLE, Frontend_Assets_Loader::ALPINEJS_HANDLE ],
+			ELEMENTOR_VERSION,
+			true
+		);
 	}
 
 	protected function get_templates(): array {

@@ -17,6 +17,7 @@
     {% if settings.attributes is defined and settings.attributes is not empty %}
         {{ settings.attributes | raw }}
     {% endif %}
+    {% if (editor_attributes | default('')) is empty %}x-data="eBackgroundVideo{{ id }}"{% endif %}
     {{ editor_attributes | default('') | raw }}>
     {% if settings.source is defined and settings.source.url is not empty %}
         <video
@@ -26,8 +27,6 @@
             {% if settings.mute %}muted{% endif %}
             {% if settings.loop %}loop{% endif %}
             playsinline
-            onplay="this.parentElement.classList.add('is-playing')"
-            onpause="this.parentElement.classList.remove('is-playing')"
         >
             <source src="{{ settings.source.url | e('full_url') }}">
         </video>
