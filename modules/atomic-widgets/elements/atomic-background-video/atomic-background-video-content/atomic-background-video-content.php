@@ -72,11 +72,17 @@ class Atomic_Background_Video_Content extends Atomic_Element_Base {
 	protected function define_base_styles(): array {
 		$styles = [
 			'position'       => String_Prop_Type::generate( 'relative' ),
-			'width'          => Size_Prop_Type::generate( [ 'size' => 100, 'unit' => '%' ] ),
+			'width'          => Size_Prop_Type::generate( [
+				'size' => 100,
+				'unit' => '%',
+			] ),
 			'z-index'        => String_Prop_Type::generate( '1' ),
 			'display'        => String_Prop_Type::generate( 'flex' ),
 			'flex-direction' => String_Prop_Type::generate( 'column' ),
-			'padding'        => Size_Prop_Type::generate( [ 'size' => 16, 'unit' => 'px' ] ),
+			'padding'        => Size_Prop_Type::generate( [
+				'size' => 16,
+				'unit' => 'px',
+			] ),
 		];
 
 		return [

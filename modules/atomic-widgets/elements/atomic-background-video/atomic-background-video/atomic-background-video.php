@@ -132,7 +132,10 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 			'display'  => String_Prop_Type::generate( 'flex' ),
 			'position' => String_Prop_Type::generate( 'relative' ),
 			'overflow' => String_Prop_Type::generate( 'hidden' ),
-			'width'    => Size_Prop_Type::generate( [ 'size' => 100, 'unit' => '%' ] ),
+			'width'    => Size_Prop_Type::generate( [
+				'size' => 100,
+				'unit' => '%',
+			] ),
 		];
 
 		return [
@@ -170,6 +173,4 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 			'elementor/elements/atomic-background-video' => __DIR__ . '/atomic-background-video.html.twig',
 		];
 	}
-
 }
-

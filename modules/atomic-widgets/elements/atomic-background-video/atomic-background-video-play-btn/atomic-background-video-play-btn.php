@@ -75,11 +75,23 @@ class Atomic_Background_Video_Play_Btn extends Atomic_Element_Base {
 			'display'         => String_Prop_Type::generate( 'flex' ),
 			'align-items'     => String_Prop_Type::generate( 'center' ),
 			'justify-content' => String_Prop_Type::generate( 'center' ),
-			'width'           => Size_Prop_Type::generate( [ 'size' => 56, 'unit' => 'px' ] ),
-			'height'          => Size_Prop_Type::generate( [ 'size' => 56, 'unit' => 'px' ] ),
-			'border-radius'   => Size_Prop_Type::generate( [ 'size' => 50, 'unit' => '%' ] ),
+			'width'           => Size_Prop_Type::generate( [
+				'size' => 56,
+				'unit' => 'px',
+			] ),
+			'height'          => Size_Prop_Type::generate( [
+				'size' => 56,
+				'unit' => 'px',
+			] ),
+			'border-radius'   => Size_Prop_Type::generate( [
+				'size' => 50,
+				'unit' => '%',
+			] ),
 			'cursor'          => String_Prop_Type::generate( 'pointer' ),
-			'font-size'       => Size_Prop_Type::generate( [ 'size' => 24, 'unit' => 'px' ] ),
+			'font-size'       => Size_Prop_Type::generate( [
+				'size' => 24,
+				'unit' => 'px',
+			] ),
 		];
 
 		return [

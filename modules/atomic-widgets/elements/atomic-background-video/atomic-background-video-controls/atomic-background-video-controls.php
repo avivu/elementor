@@ -76,12 +76,21 @@ class Atomic_Background_Video_Controls extends Atomic_Element_Base {
 	protected function define_base_styles(): array {
 		$styles = [
 			'position'         => String_Prop_Type::generate( 'absolute' ),
-			'bottom'           => Size_Prop_Type::generate( [ 'size' => 16, 'unit' => 'px' ] ),
-			'right'            => Size_Prop_Type::generate( [ 'size' => 16, 'unit' => 'px' ] ),
+			'bottom'           => Size_Prop_Type::generate( [
+				'size' => 16,
+				'unit' => 'px',
+			] ),
+			'right'            => Size_Prop_Type::generate( [
+				'size' => 16,
+				'unit' => 'px',
+			] ),
 			'z-index'          => String_Prop_Type::generate( '2' ),
 			'display'          => String_Prop_Type::generate( 'flex' ),
 			'align-items'      => String_Prop_Type::generate( 'center' ),
-			'gap'              => Size_Prop_Type::generate( [ 'size' => 8, 'unit' => 'px' ] ),
+			'gap'              => Size_Prop_Type::generate( [
+				'size' => 8,
+				'unit' => 'px',
+			] ),
 		];
 
 		return [
