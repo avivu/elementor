@@ -110,7 +110,7 @@ use Elementor\Modules\AtomicWidgets\Styles\Style_Schema;
 use Elementor\Modules\AtomicWidgets\Database\Atomic_Widgets_Database_Updater;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Tabs\Atomic_Tab_Content\Atomic_Tab_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video\Atomic_Background_Video;
-use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Overlay\Atomic_Background_Video_Overlay;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Content\Atomic_Background_Video_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Controls\Atomic_Background_Video_Controls;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Play_Btn\Atomic_Background_Video_Play_Btn;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Pause_Btn\Atomic_Background_Video_Pause_Btn;
@@ -144,6 +144,7 @@ class Module extends BaseModule {
 	const ENFORCE_CAPABILITIES_EXPERIMENT = 'atomic_widgets_should_enforce_capabilities';
 	const EXPERIMENT_EDITOR_MCP = 'editor_mcp';
 	const EXPERIMENT_CSS_GRID = 'e_css_grid';
+	const EXPERIMENT_BACKGROUND_VIDEO = 'e_background_video';
 
 	const PACKAGES = [
 		'editor-canvas',
@@ -244,6 +245,15 @@ class Module extends BaseModule {
 		]);
 
 		Plugin::$instance->experiments->add_feature( [
+			'name' => self::EXPERIMENT_BACKGROUND_VIDEO,
+			'title' => esc_html__( 'Background Video', 'elementor' ),
+			'description' => esc_html__( 'Enable the Background Video element.', 'elementor' ),
+			'hidden' => true,
+			'default' => Experiments_Manager::STATE_INACTIVE,
+			'release_status' => Experiments_Manager::RELEASE_STATUS_DEV,
+		] );
+
+		Plugin::$instance->experiments->add_feature( [
 			'name' => self::EXPERIMENT_CSS_GRID,
 			'title' => esc_html__( 'CSS Grid', 'elementor' ),
 			'description' => esc_html__( 'Enable CSS Grid layout for containers.', 'elementor' ),
@@ -318,7 +328,7 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Tab_Content() );
 
 		$elements_manager->register_element_type( new Atomic_Background_Video() );
-		$elements_manager->register_element_type( new Atomic_Background_Video_Overlay() );
+		$elements_manager->register_element_type( new Atomic_Background_Video_Content() );
 		$elements_manager->register_element_type( new Atomic_Background_Video_Controls() );
 		$elements_manager->register_element_type( new Atomic_Background_Video_Play_Btn() );
 		$elements_manager->register_element_type( new Atomic_Background_Video_Pause_Btn() );
@@ -495,6 +505,37 @@ class Module extends BaseModule {
 		] );
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
+
+		// Frontend: pause button hidden by default; swapped via vanilla JS is-playing class.
+		// e-show-controls-false: hide entire controls area when show_controls setting is off.
+		$video_frontend_css = implode( '', [
+			'[data-e-type="e-background-video"] [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+			'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+			'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
+			'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
+		] );
+		wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
+
+		// Editor: children are rendered INSIDE the parent Twig div (same structure as frontend).
+		// Positioning is handled by controls' own inline styles (position:absolute; right:16px; etc.).
+		// Only state-based show/hide rules needed here.
+		$video_editor_css = implode( '', [
+			// Min-height only on the empty view — once a widget is added the empty view is hidden
+			// and the root freely sizes to content height + content padding.
+			'.elementor-editor-active [data-e-type="e-background-video-content"] > .elementor-empty-view { min-height: 88px; }',
+			// Make the empty-view drop zone respect the content wrapper padding so the 16px gap is visible.
+			'.elementor-editor-active [data-e-type="e-background-video-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
+			// Show eicon-plus in center when no user content children (only Video Controls child exists).
+			'.elementor-editor-active [data-e-type="e-background-video"]:not(:has(> .elementor-element:not([data-e-type="e-background-video-controls"])))::after { font-family: eicons; content: "\e815"; font-size: 20px; color: #b5b5b5; pointer-events: none; margin: auto; }',
+			// Default state (no state selected): hide all buttons — controls only preview in Play/Pause states.
+			'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+			// Play state: show pause btn, hide play btn.
+			'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
+			'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+			// Pause state: play btn visible (default), pause btn hidden (default inline style). No rule needed.
+		] );
+		wp_add_inline_style( 'elementor-frontend', $video_editor_css );
+		wp_add_inline_style( 'elementor-editor', $video_editor_css );
 	}
 
 	private function enqueue_promotion_styles() {

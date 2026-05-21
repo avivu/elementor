@@ -50,7 +50,7 @@ class Atomic_Background_Video_Controls extends Atomic_Element_Base {
 	}
 
 	public function get_icon() {
-		return 'eicon-settings';
+		return '';
 	}
 
 	public function should_show_in_panel() {

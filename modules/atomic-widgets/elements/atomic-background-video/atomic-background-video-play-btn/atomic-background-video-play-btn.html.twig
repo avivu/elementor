@@ -5,8 +5,8 @@
     data-e-type="{{ type }}"
     data-interaction-id="{{ interaction_id }}"
     data-interactions="{{ interactions | json_encode | e('html_attr') }}"
-    x-show="!isPlaying"
-    @click="$refs.video.play(); isPlaying = true"
+    style="display:flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; cursor:pointer; font-size:24px; color:#fff;"
+    {% if (editor_attributes | default('')) is empty %}onclick="var c=this.closest('[data-e-type=e-background-video]'); if(c){var v=c.querySelector('video'); if(v)v.play(); c.classList.add('is-playing');}"{% endif %}
     {% if settings.attributes is defined and settings.attributes is not empty %}
         {{ settings.attributes | raw }}
     {% endif %}
