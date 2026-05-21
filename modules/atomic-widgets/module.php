@@ -529,10 +529,13 @@ class Module extends BaseModule {
 			'.elementor-editor-active [data-e-type="e-background-video"]:not(:has(> .elementor-element:not([data-e-type="e-background-video-controls"])))::after { font-family: eicons; content: "\e815"; font-size: 20px; color: #b5b5b5; pointer-events: none; margin: auto; }',
 			// Default state (no state selected): hide all buttons — controls only preview in Play/Pause states.
 			'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-play-btn"] { display: none !important; }',
-			// Play state: show pause btn, hide play btn.
+			'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+			// Play state: video is playing — show pause btn, hide play btn.
 			'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
 			'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-play-btn"] { display: none !important; }',
-			// Pause state: play btn visible (default), pause btn hidden (default inline style). No rule needed.
+			// Pause state: video is paused — show play btn, hide pause btn.
+			'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-play-btn"] { display: flex !important; }',
+			'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $video_editor_css );
 		wp_add_inline_style( 'elementor-editor', $video_editor_css );
