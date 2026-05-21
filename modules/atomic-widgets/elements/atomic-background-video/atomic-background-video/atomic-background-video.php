@@ -60,11 +60,16 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 	protected static function define_props_schema(): array {
 		return [
 			'classes'       => Classes_Prop_Type::make()->default( [] ),
-			'source'        => Video_Src_Prop_Type::make(),
-			'autoplay'      => Boolean_Prop_Type::make()->default( true ),
-			'mute'          => Boolean_Prop_Type::make()->default( true ),
-			'loop'          => Boolean_Prop_Type::make()->default( true ),
-			'show_controls' => Boolean_Prop_Type::make()->default( true ),
+			'source'        => Video_Src_Prop_Type::make()
+				->description( 'The video file URL to use as the background.' ),
+			'autoplay'      => Boolean_Prop_Type::make()->default( true )
+				->description( 'Whether the video starts playing automatically on page load.' ),
+			'mute'          => Boolean_Prop_Type::make()->default( true )
+				->description( 'Whether the video is muted. Required for autoplay in most browsers.' ),
+			'loop'          => Boolean_Prop_Type::make()->default( true )
+				->description( 'Whether the video loops continuously.' ),
+			'show_controls' => Boolean_Prop_Type::make()->default( true )
+				->description( 'Whether to show the play/pause control buttons over the video.' ),
 			'video-state'   => String_Prop_Type::make()
 				->enum( [ 'default', 'play', 'pause' ] )
 				->default( 'default' )
@@ -172,5 +177,16 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 		return [
 			'elementor/elements/atomic-background-video' => __DIR__ . '/atomic-background-video.html.twig',
 		];
+	}
+
+	public function render_markdown(): string {
+		$settings = $this->get_atomic_settings();
+		$url = $settings['source']['url'] ?? '';
+
+		if ( empty( $url ) ) {
+			return '';
+		}
+
+		return '[Background Video](' . esc_url( $url ) . ')';
 	}
 }
