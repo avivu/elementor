@@ -1,13 +1,14 @@
 {% set classes = ['e-con', 'e-atomic-element', base_styles.base] | merge(settings.classes | default([])) | join(' ') %}
-<div class="{{ classes }} {{ editor_classes | default('') }}"
+<button type="button" class="{{ classes }} {{ editor_classes | default('') }}"
     data-id="{{ id }}"
     data-element_type="{{ type }}"
     data-e-type="{{ type }}"
     data-interaction-id="{{ interaction_id }}"
     data-interactions="{{ interactions | json_encode | e('html_attr') }}"
-    style="display:none; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; cursor:pointer; font-size:24px; color:#fff;"
+    aria-label="Pause video"
+    style="display:none; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; cursor:pointer; font-size:24px; color:#fff; border:none; background:transparent; padding:0;"
     {% if (editor_attributes | default('')) is empty %}onclick="var c=this.closest('[data-e-type=e-background-video]'); if(c){var v=c.querySelector('video'); if(v)v.pause(); c.classList.remove('is-playing');}"{% endif %}
     {% if settings.attributes is defined and settings.attributes is not empty %}
         {{ settings.attributes | raw }}
     {% endif %}
-    {{ editor_attributes | default('') | raw }}><!-- elementor-children-placeholder --></div>
+    {{ editor_attributes | default('') | raw }}><!-- elementor-children-placeholder --></button>
