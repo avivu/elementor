@@ -21,7 +21,7 @@ class Atomic_Background_Video_Content extends Atomic_Element_Base {
 
 	const BASE_STYLE_KEY = 'base';
 
-	public static $widget_description = 'A full-size content slot layered over the background video. Drop any widgets here — text, buttons, headings — to render them on top of the video.';
+	public static $widget_description = 'A full-size content slot layered over the background video. Drop any elements here — text, buttons, headings — to render them on top of the video.';
 
 	public function __construct( $data = [], $args = null ) {
 		parent::__construct( $data, $args );

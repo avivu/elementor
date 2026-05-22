@@ -22,7 +22,7 @@ class Atomic_Background_Video_Pause_Btn extends Atomic_Element_Base {
 
 	const BASE_STYLE_KEY = 'base';
 
-	public static $widget_description = 'Pause button shown when the video is playing. Hidden by default, visible when the video is playing. Drop any SVG, image, or icon widget inside to customise the icon.';
+	public static $widget_description = 'Pause button shown when the video is playing. Hidden by default, visible when the video is playing. Drop any SVG or image inside to customise the icon.';
 
 	public function __construct( $data = [], $args = null ) {
 		parent::__construct( $data, $args );
@@ -84,10 +84,6 @@ class Atomic_Background_Video_Pause_Btn extends Atomic_Element_Base {
 				'unit' => 'px',
 			] ),
 			'cursor'          => String_Prop_Type::generate( 'pointer' ),
-			'font-size'       => Size_Prop_Type::generate( [
-				'size' => 24,
-				'unit' => 'px',
-			] ),
 		];
 
 		return [
