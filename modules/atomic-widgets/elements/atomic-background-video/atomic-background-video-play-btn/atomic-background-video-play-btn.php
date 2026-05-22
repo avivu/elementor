@@ -83,10 +83,6 @@ class Atomic_Background_Video_Play_Btn extends Atomic_Element_Base {
 				'size' => 56,
 				'unit' => 'px',
 			] ),
-			'border-radius'   => Size_Prop_Type::generate( [
-				'size' => 50,
-				'unit' => '%',
-			] ),
 			'cursor'          => String_Prop_Type::generate( 'pointer' ),
 			'font-size'       => Size_Prop_Type::generate( [
 				'size' => 24,
