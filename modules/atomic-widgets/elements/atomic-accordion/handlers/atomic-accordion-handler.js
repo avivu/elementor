@@ -15,11 +15,6 @@ register( {
 			if ( title ) {
 				title.classList.toggle( SELECTED_CLASS, isOpen );
 			}
-
-			const icon = details.querySelector( '[data-e-type="e-accordion-item-icon"]' );
-			if ( icon ) {
-				icon.classList.toggle( SELECTED_CLASS, isOpen );
-			}
 		};
 
 		const items = element.querySelectorAll( '[data-e-type="e-accordion-item"]' );

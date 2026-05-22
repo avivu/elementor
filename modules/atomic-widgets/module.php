@@ -113,6 +113,7 @@ use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion\A
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item\Atomic_Accordion_Item;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Content\Atomic_Accordion_Item_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Icon\Atomic_Accordion_Item_Icon;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Icon_Expanded\Atomic_Accordion_Item_Icon_Expanded;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Title\Atomic_Accordion_Item_Title;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form_Promotion;
@@ -333,6 +334,7 @@ class Module extends BaseModule {
 			$elements_manager->register_element_type( new Atomic_Accordion_Item_Title() );
 			$elements_manager->register_element_type( new Atomic_Accordion_Item_Content() );
 			$elements_manager->register_element_type( new Atomic_Accordion_Item_Icon() );
+			$elements_manager->register_element_type( new Atomic_Accordion_Item_Icon_Expanded() );
 		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
@@ -519,9 +521,11 @@ class Module extends BaseModule {
 			'[data-e-type="e-accordion-item-content"] { transition: grid-template-rows 0.3s ease; }',
 			// Open state: expand from 0fr to 1fr.
 			'[data-e-type="e-accordion-item"][open] > [data-e-type="e-accordion-item-content"] { grid-template-rows: 1fr !important; }',
-			// Chevron icon: rotate 180deg when item is open.
-			'[data-e-type="e-accordion-item-icon"] { transition: transform 0.3s ease; }',
-			'[data-e-type="e-accordion-item"][open] [data-e-type="e-accordion-item-icon"] { transform: rotate(180deg); }',
+			// Two-icon toggle: collapsed icon visible by default, expanded icon hidden.
+			'[data-e-type="e-accordion-item-icon-expanded"] { display: none; }',
+			// When item is open (.e--selected added by JS handler on <details>): swap icons.
+			'[data-e-type="e-accordion-item"].e--selected [data-e-type="e-accordion-item-icon"] { display: none !important; }',
+			'[data-e-type="e-accordion-item"].e--selected [data-e-type="e-accordion-item-icon-expanded"] { display: flex !important; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $accordion_css );
 
@@ -529,8 +533,12 @@ class Module extends BaseModule {
 		$accordion_editor_css = implode( '', [
 			// Override browser UA stylesheet that hides details > :not(summary) when closed.
 			'.elementor-editor-active details[data-e-type="e-accordion-item"] > :not([data-e-type="e-accordion-item-title"]) { display: block !important; }',
-			'.elementor-editor-active [data-e-type="e-accordion-item-content"] { display: grid !important; grid-template-rows: 1fr !important; }',
+			// Remove grid constraints so content height is natural.
+			'.elementor-editor-active [data-e-type="e-accordion-item-content"] { display: block !important; overflow: visible !important; }',
+			'.elementor-editor-active [data-e-type="e-accordion-item-content"] > div { overflow: visible !important; min-height: auto !important; }',
 			'.elementor-editor-active [data-e-type="e-accordion-item-content"] > div > .elementor-empty-view { min-height: 60px; }',
+			// Show both icons in the editor so users can select and style each state.
+			'.elementor-editor-active [data-e-type^="e-accordion-item-icon"] { display: flex !important; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $accordion_editor_css );
 		wp_add_inline_style( 'elementor-editor', $accordion_editor_css );

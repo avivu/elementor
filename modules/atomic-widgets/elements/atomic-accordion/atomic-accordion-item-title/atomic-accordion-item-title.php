@@ -3,6 +3,7 @@ namespace Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accor
 
 use Elementor\Modules\AtomicWidgets\Controls\Section;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Icon\Atomic_Accordion_Item_Icon;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Icon_Expanded\Atomic_Accordion_Item_Icon_Expanded;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Paragraph\Atomic_Paragraph;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
@@ -115,6 +116,7 @@ class Atomic_Accordion_Item_Title extends Atomic_Element_Base {
 				] )
 				->build(),
 			Atomic_Accordion_Item_Icon::generate()->build(),
+			Atomic_Accordion_Item_Icon_Expanded::generate()->build(),
 		];
 	}
 
