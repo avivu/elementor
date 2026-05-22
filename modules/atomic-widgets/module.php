@@ -109,6 +109,10 @@ use Elementor\Modules\AtomicWidgets\Styles\Size_Constants;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Schema;
 use Elementor\Modules\AtomicWidgets\Database\Atomic_Widgets_Database_Updater;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Tabs\Atomic_Tab_Content\Atomic_Tab_Content;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion\Atomic_Accordion;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item\Atomic_Accordion_Item;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Title\Atomic_Accordion_Item_Title;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Content\Atomic_Accordion_Item_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form_Promotion;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Form_Success_Message\Form_Success_Message;
@@ -139,6 +143,7 @@ class Module extends BaseModule {
 	const ENFORCE_CAPABILITIES_EXPERIMENT = 'atomic_widgets_should_enforce_capabilities';
 	const EXPERIMENT_EDITOR_MCP = 'editor_mcp';
 	const EXPERIMENT_CSS_GRID = 'e_css_grid';
+	const EXPERIMENT_ACCORDION = 'e_accordion';
 
 	const PACKAGES = [
 		'editor-canvas',
@@ -239,6 +244,15 @@ class Module extends BaseModule {
 		]);
 
 		Plugin::$instance->experiments->add_feature( [
+			'name' => self::EXPERIMENT_ACCORDION,
+			'title' => esc_html__( 'Accordion', 'elementor' ),
+			'description' => esc_html__( 'Enable the Accordion element.', 'elementor' ),
+			'hidden' => true,
+			'default' => Experiments_Manager::STATE_INACTIVE,
+			'release_status' => Experiments_Manager::RELEASE_STATUS_DEV,
+		] );
+
+		Plugin::$instance->experiments->add_feature( [
 			'name' => self::EXPERIMENT_CSS_GRID,
 			'title' => esc_html__( 'CSS Grid', 'elementor' ),
 			'description' => esc_html__( 'Enable CSS Grid layout for containers.', 'elementor' ),
@@ -311,6 +325,13 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Tab() );
 		$elements_manager->register_element_type( new Atomic_Tabs_Content_Area() );
 		$elements_manager->register_element_type( new Atomic_Tab_Content() );
+
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_ACCORDION ) ) {
+			$elements_manager->register_element_type( new Atomic_Accordion() );
+			$elements_manager->register_element_type( new Atomic_Accordion_Item() );
+			$elements_manager->register_element_type( new Atomic_Accordion_Item_Title() );
+			$elements_manager->register_element_type( new Atomic_Accordion_Item_Content() );
+		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
 			$elements_manager->register_element_type( new Atomic_Form() );
@@ -484,6 +505,28 @@ class Module extends BaseModule {
 		] );
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
+
+		// Accordion: smooth open animation via CSS Grid trick.
+		// Transition is applied globally; open state overrides the 0fr base with 1fr.
+		// The [open] attribute is toggled natively by the browser on <details> click.
+		$accordion_css = implode( '', [
+			// Remove native disclosure triangle from <summary>.
+			'[data-e-type="e-accordion-item-title"] { list-style: none; }',
+			'[data-e-type="e-accordion-item-title"]::-webkit-details-marker { display: none; }',
+			// Default transition for height animation. Users can override via style panel.
+			'[data-e-type="e-accordion-item-content"] { transition: grid-template-rows 0.3s ease; }',
+			// Open state: expand from 0fr to 1fr.
+			'[data-e-type="e-accordion-item"][open] > [data-e-type="e-accordion-item-content"] { grid-template-rows: 1fr !important; }',
+		] );
+		wp_add_inline_style( 'elementor-frontend', $accordion_css );
+
+		// Editor: always show content expanded so items are editable.
+		$accordion_editor_css = implode( '', [
+			'.elementor-editor-active [data-e-type="e-accordion-item-content"] { grid-template-rows: 1fr !important; }',
+			'.elementor-editor-active [data-e-type="e-accordion-item-content"] > div > .elementor-empty-view { min-height: 60px; }',
+		] );
+		wp_add_inline_style( 'elementor-frontend', $accordion_editor_css );
+		wp_add_inline_style( 'elementor-editor', $accordion_editor_css );
 	}
 
 	private function enqueue_promotion_styles() {
