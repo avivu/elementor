@@ -2,10 +2,12 @@
 namespace Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video;
 
 use Elementor\Modules\AtomicWidgets\Controls\Section;
+use Elementor\Modules\AtomicWidgets\Controls\Types\Number_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Switch_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Text_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Toggle_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Video_Control;
+use Elementor\Modules\AtomicWidgets\DynamicTags\Dynamic_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Content\Atomic_Background_Video_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Controls\Atomic_Background_Video_Controls;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
@@ -16,6 +18,7 @@ use Elementor\Modules\AtomicWidgets\PropDependencies\Manager as Dependency_Manag
 use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\Boolean_Prop_Type;
+use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\Number_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Size_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Video_Src_Prop_Type;
@@ -70,6 +73,14 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 				->description( 'Whether the video is muted. Required for autoplay in most browsers.' ),
 			'loop'          => Boolean_Prop_Type::make()->default( true )
 				->description( 'Whether the video loops continuously.' ),
+			'start_time'    => Number_Prop_Type::make()
+				->default( null )
+				->meta( Dynamic_Prop_Type::ignore() )
+				->meta( 'suffix', 'SEC' ),
+			'end_time'      => Number_Prop_Type::make()
+				->default( null )
+				->meta( Dynamic_Prop_Type::ignore() )
+				->meta( 'suffix', 'SEC' ),
 			'show_controls' => Boolean_Prop_Type::make()->default( true )
 				->description( 'Whether to show the play/pause control buttons over the video.' ),
 			'video-state'   => String_Prop_Type::make()
@@ -113,6 +124,14 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 				->set_items( [
 					Video_Control::bind_to( 'source' )
 						->set_label( esc_html__( 'Video', 'elementor' ) ),
+					Number_Control::bind_to( 'start_time' )
+						->set_label( esc_html__( 'Start Time', 'elementor' ) )
+						->set_min( 0 )
+						->set_max( 10000 ),
+					Number_Control::bind_to( 'end_time' )
+						->set_label( esc_html__( 'End Time', 'elementor' ) )
+						->set_min( 0 )
+						->set_max( 10000 ),
 					Switch_Control::bind_to( 'autoplay' )
 						->set_label( esc_html__( 'Autoplay', 'elementor' ) ),
 					Switch_Control::bind_to( 'mute' )

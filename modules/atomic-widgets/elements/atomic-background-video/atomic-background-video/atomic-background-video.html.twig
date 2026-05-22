@@ -19,6 +19,16 @@
     {% endif %}
     {{ editor_attributes | default('') | raw }}>
     {% if settings.source is defined and settings.source.url is not empty %}
+        {%- set video_start_time = settings.start_time | default(null) -%}
+        {%- set video_end_time = settings.end_time | default(null) -%}
+        {%- if video_start_time is not empty -%}
+            {%- set video_timings = '#t=' ~ video_start_time -%}
+        {%- else -%}
+            {%- set video_timings = '#t=0' -%}
+        {%- endif -%}
+        {%- if video_end_time is not empty and video_end_time > video_start_time -%}
+            {%- set video_timings = video_timings ~ ',' ~ video_end_time -%}
+        {%- endif -%}
         <video
             aria-hidden="true"
             style="position:absolute; top:0; left:0; right:0; bottom:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;"
@@ -27,7 +37,7 @@
             {% if settings.loop %}loop{% endif %}
             playsinline
         >
-            <source src="{{ settings.source.url | e('full_url') }}">
+            <source src="{{ settings.source.url | e('full_url') ~ video_timings }}">
         </video>
     {% endif %}
     <!-- elementor-children-placeholder -->
