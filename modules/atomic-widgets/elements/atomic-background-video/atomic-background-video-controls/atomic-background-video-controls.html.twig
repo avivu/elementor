@@ -5,7 +5,7 @@
     data-e-type="{{ type }}"
     data-interaction-id="{{ interaction_id }}"
     data-interactions="{{ interactions | json_encode | e('html_attr') }}"
-    style="position:absolute; bottom:16px; right:16px; z-index:2; display:flex; align-items:center; gap:8px; transform:translateZ(0); width:auto; {% if show_controls is defined and not show_controls %}display:none;{% endif %}"
+    style="position:absolute; z-index:2; display:flex; align-items:center; gap:8px; transform:translateZ(0); width:auto; {% if show_controls is defined and not show_controls %}display:none;{% endif %}"
     {% if settings.attributes is defined and settings.attributes is not empty %}
         {{ settings.attributes | raw }}
     {% endif %}
