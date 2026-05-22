@@ -10,11 +10,13 @@ import {
 	updateElementEditorSettings,
 	useElementEditorSettings,
 } from '@elementor/editor-elements';
+import { type CreateOptions } from '@elementor/editor-props';
 import { commandEndEvent, v1ReadyEvent, __privateUseListenTo as useListenTo } from '@elementor/editor-v1-adapters';
 import { Stack, TextField } from '@elementor/ui';
 import { __ } from '@wordpress/i18n';
 
 import { useElement } from '../../../contexts/element-context';
+import { SettingsField } from '../../settings-field';
 import { ACCORDION_ITEM_TYPE, type AccordionItem, useActions } from './use-actions';
 
 type AccordionItemModel = {
@@ -22,6 +24,14 @@ type AccordionItemModel = {
 };
 
 export const AccordionControl = ( { label }: { label: string } ) => {
+	return (
+		<SettingsField bind="default_open_index" propDisplayName={ __( 'Accordion', 'elementor' ) }>
+			<AccordionControlContent label={ label } />
+		</SettingsField>
+	);
+};
+
+const AccordionControlContent = ( { label }: { label: string } ) => {
 	const { element } = useElement();
 	const { addItem, duplicateItem, moveItem, removeItem } = useActions();
 
@@ -60,7 +70,7 @@ export const AccordionControl = ( { label }: { label: string } ) => {
 
 	const setValue = (
 		_newValues: RepeaterItem< AccordionItem >[],
-		_options: unknown,
+		_options: CreateOptions,
 		meta?: SetRepeaterValuesMeta< RepeaterItem< AccordionItem > >
 	) => {
 		if ( meta?.action?.type === 'add' ) {
