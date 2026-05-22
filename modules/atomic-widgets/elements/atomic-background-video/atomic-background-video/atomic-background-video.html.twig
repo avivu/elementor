@@ -17,7 +17,6 @@
     {% if settings.attributes is defined and settings.attributes is not empty %}
         {{ settings.attributes | raw }}
     {% endif %}
-    {% if (editor_attributes | default('')) is empty %}x-data="eBackgroundVideo{{ id }}"{% endif %}
     {{ editor_attributes | default('') | raw }}>
     {% if settings.source is defined and settings.source.url is not empty %}
         <video

@@ -1,44 +1,32 @@
 import { register } from '@elementor/frontend-handlers';
-import { Alpine } from '@elementor/alpinejs';
 
 register( {
 	elementType: 'e-background-video',
 	id: 'e-background-video-handler',
 	callback: ( { element } ) => {
-		const videoId = element.dataset.id;
+		const video = element.querySelector( 'video' );
 
-		Alpine.data( `eBackgroundVideo${ videoId }`, () => ( {
-			init() {
-				const video = this.$el.querySelector( 'video' );
+		if ( ! video ) {
+			return;
+		}
 
-				if ( ! video ) {
-					return;
-				}
+		video.addEventListener( 'play', () => {
+			element.classList.add( 'is-playing' );
+		} );
 
-				video.addEventListener( 'play', () => {
-					this.$el.classList.add( 'is-playing' );
-				} );
+		video.addEventListener( 'pause', () => {
+			element.classList.remove( 'is-playing' );
+		} );
 
-				video.addEventListener( 'pause', () => {
-					this.$el.classList.remove( 'is-playing' );
-				} );
-			},
+		element.addEventListener( 'click', ( event ) => {
+			const playBtn = event.target.closest( '[data-e-type="e-background-video-play-btn"]' );
+			const pauseBtn = event.target.closest( '[data-e-type="e-background-video-pause-btn"]' );
 
-			playVideo() {
-				const video = this.$el.querySelector( 'video' );
-
-				if ( video ) {
-					video.play();
-				}
-			},
-
-			pauseVideo() {
-				const video = this.$el.querySelector( 'video' );
-
-				if ( video ) {
-					video.pause();
-				}
-			},
-		} ) );
+			if ( playBtn ) {
+				video.play();
+			} else if ( pauseBtn ) {
+				video.pause();
+			}
+		} );
 	},
 } );

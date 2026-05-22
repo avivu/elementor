@@ -11,7 +11,6 @@ use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Back
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
 use Elementor\Modules\AtomicWidgets\Elements\Loader\Frontend_Assets_Loader;
-use Elementor\Plugin;
 use Elementor\Utils;
 use Elementor\Modules\AtomicWidgets\PropDependencies\Manager as Dependency_Manager;
 use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
@@ -187,7 +186,7 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 		wp_register_script(
 			'elementor-background-video-handler',
 			"{$assets_url}js/background-video-handler{$min_suffix}.js",
-			[ Frontend_Assets_Loader::FRONTEND_HANDLERS_HANDLE, Frontend_Assets_Loader::ALPINEJS_HANDLE ],
+			[ Frontend_Assets_Loader::FRONTEND_HANDLERS_HANDLE ],
 			ELEMENTOR_VERSION,
 			true
 		);
