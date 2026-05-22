@@ -327,11 +327,13 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Tabs_Content_Area() );
 		$elements_manager->register_element_type( new Atomic_Tab_Content() );
 
-		$elements_manager->register_element_type( new Atomic_Background_Video() );
-		$elements_manager->register_element_type( new Atomic_Background_Video_Content() );
-		$elements_manager->register_element_type( new Atomic_Background_Video_Controls() );
-		$elements_manager->register_element_type( new Atomic_Background_Video_Play_Btn() );
-		$elements_manager->register_element_type( new Atomic_Background_Video_Pause_Btn() );
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO ) ) {
+			$elements_manager->register_element_type( new Atomic_Background_Video() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Content() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Controls() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Play_Btn() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Pause_Btn() );
+		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
 			$elements_manager->register_element_type( new Atomic_Form() );
