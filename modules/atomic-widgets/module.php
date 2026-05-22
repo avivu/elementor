@@ -521,15 +521,17 @@ class Module extends BaseModule {
 			'[data-e-type="e-accordion-item-content"] { transition: grid-template-rows 0.3s ease; }',
 			// Open state: expand from 0fr to 1fr.
 			'[data-e-type="e-accordion-item"][open] > [data-e-type="e-accordion-item-content"] { grid-template-rows: 1fr !important; }',
-			// Two-icon toggle: collapsed icon visible by default, expanded icon hidden.
-			'[data-e-type="e-accordion-item-icon-expanded"] { display: none; }',
-			// When item is open (.e--selected added by JS handler on <details>): swap icons.
-			'[data-e-type="e-accordion-item"].e--selected [data-e-type="e-accordion-item-icon"] { display: none !important; }',
-			'[data-e-type="e-accordion-item"].e--selected [data-e-type="e-accordion-item-icon-expanded"] { display: flex !important; }',
+			// Two-icon toggle: collapsed visible by default, expanded hidden.
+			// !important overrides the twig inline style="display:flex" on the expanded icon.
+			'[data-e-type="e-accordion-item-icon-expanded"] { display: none !important; }',
+			// When item is open (native [open] attr): swap icons. Works in editor + frontend.
+			'[data-e-type="e-accordion-item"][open] [data-e-type="e-accordion-item-icon"] { display: none !important; }',
+			'[data-e-type="e-accordion-item"][open] [data-e-type="e-accordion-item-icon-expanded"] { display: flex !important; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $accordion_css );
 
 		// Editor: always show content expanded so items are editable.
+		// Icons follow the native [open] attribute — clicking the summary toggles the icon state.
 		$accordion_editor_css = implode( '', [
 			// Override browser UA stylesheet that hides details > :not(summary) when closed.
 			'.elementor-editor-active details[data-e-type="e-accordion-item"] > :not([data-e-type="e-accordion-item-title"]) { display: block !important; }',
@@ -537,8 +539,6 @@ class Module extends BaseModule {
 			'.elementor-editor-active [data-e-type="e-accordion-item-content"] { display: block !important; overflow: visible !important; }',
 			'.elementor-editor-active [data-e-type="e-accordion-item-content"] > div { overflow: visible !important; min-height: auto !important; }',
 			'.elementor-editor-active [data-e-type="e-accordion-item-content"] > div > .elementor-empty-view { min-height: 60px; }',
-			// Show both icons in the editor so users can select and style each state.
-			'.elementor-editor-active [data-e-type^="e-accordion-item-icon"] { display: flex !important; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $accordion_editor_css );
 		wp_add_inline_style( 'elementor-editor', $accordion_editor_css );
