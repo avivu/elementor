@@ -2,6 +2,7 @@
 namespace Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Title;
 
 use Elementor\Modules\AtomicWidgets\Controls\Section;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Icon\Atomic_Accordion_Item_Icon;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Paragraph\Atomic_Paragraph;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
@@ -11,6 +12,7 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Html_V3_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Size_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Definition;
+use Elementor\Modules\AtomicWidgets\Styles\Style_States;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 use Elementor\Modules\Components\PropTypes\Overridable_Prop_Type;
 
@@ -67,6 +69,10 @@ class Atomic_Accordion_Item_Title extends Atomic_Element_Base {
 		];
 	}
 
+	protected function define_atomic_style_states(): array {
+		return [ Style_States::get_class_states_map()['selected'] ];
+	}
+
 	protected function define_atomic_controls(): array {
 		return [
 			Section::make()
@@ -78,10 +84,11 @@ class Atomic_Accordion_Item_Title extends Atomic_Element_Base {
 
 	protected function define_base_styles(): array {
 		$styles = [
-			'display' => String_Prop_Type::generate( 'flex' ),
-			'align-items' => String_Prop_Type::generate( 'center' ),
-			'cursor' => String_Prop_Type::generate( 'pointer' ),
-			'padding' => Size_Prop_Type::generate( [
+			'display'          => String_Prop_Type::generate( 'flex' ),
+			'align-items'      => String_Prop_Type::generate( 'center' ),
+			'justify-content'  => String_Prop_Type::generate( 'space-between' ),
+			'cursor'           => String_Prop_Type::generate( 'pointer' ),
+			'padding'          => Size_Prop_Type::generate( [
 				'size' => 16,
 				'unit' => 'px',
 			] ),
@@ -101,12 +108,13 @@ class Atomic_Accordion_Item_Title extends Atomic_Element_Base {
 			Atomic_Paragraph::generate()
 				->settings( [
 					'paragraph' => Html_V3_Prop_Type::generate( [
-						'content' => String_Prop_Type::generate( 'Accordion Item' ),
+						'content'  => String_Prop_Type::generate( 'Accordion Item' ),
 						'children' => [],
 					] ),
 					'tag' => String_Prop_Type::generate( 'span' ),
 				] )
 				->build(),
+			Atomic_Accordion_Item_Icon::generate()->build(),
 		];
 	}
 

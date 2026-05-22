@@ -3,10 +3,12 @@ namespace Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accor
 
 use Elementor\Core\Utils\Collection;
 use Elementor\Modules\AtomicWidgets\Controls\Section;
+use Elementor\Modules\AtomicWidgets\Controls\Types\Elements\Accordion_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Text_Control;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item\Atomic_Accordion_Item;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
+use Elementor\Modules\AtomicWidgets\Elements\Loader\Frontend_Assets_Loader;
 use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\Number_Prop_Type;
@@ -14,6 +16,8 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Definition;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 use Elementor\Modules\Components\PropTypes\Overridable_Prop_Type;
+use Elementor\Plugin;
+use Elementor\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -66,6 +70,16 @@ class Atomic_Accordion extends Atomic_Element_Base {
 
 	protected function define_atomic_controls(): array {
 		return [
+			Section::make()
+				->set_label( __( 'Content', 'elementor' ) )
+				->set_id( 'content' )
+				->set_items( [
+					Accordion_Control::make()
+						->set_label( __( 'Accordion items', 'elementor' ) )
+						->set_meta( [
+							'layout' => 'custom',
+						] ),
+				] ),
 			Section::make()
 				->set_label( __( 'Settings', 'elementor' ) )
 				->set_id( 'settings' )
@@ -129,9 +143,9 @@ class Atomic_Accordion extends Atomic_Element_Base {
 		return [
 			[
 				'context' => [
-					'accordion_id' => $this->get_id(),
+					'accordion_id'      => $this->get_id(),
 					'default_open_index' => $default_open_index,
-					'get_item_index' => fn( $item_id ) => $this->get_item_index( $item_id ),
+					'get_item_index'    => fn( $item_id ) => $this->get_item_index( $item_id ),
 				],
 			],
 		];
@@ -141,6 +155,25 @@ class Atomic_Accordion extends Atomic_Element_Base {
 		return [
 			'elementor/elements/atomic-accordion' => __DIR__ . '/atomic-accordion.html.twig',
 		];
+	}
+
+	public function get_script_depends() {
+		$global_depends = parent::get_script_depends();
+
+		return array_merge( $global_depends, [ 'elementor-accordion-handler' ] );
+	}
+
+	public function register_frontend_handlers() {
+		$assets_url = ELEMENTOR_ASSETS_URL;
+		$min_suffix = ( Utils::is_script_debug() || Utils::is_elementor_tests() ) ? '' : '.min';
+
+		wp_register_script(
+			'elementor-accordion-handler',
+			"{$assets_url}js/accordion-handler{$min_suffix}.js",
+			[ Frontend_Assets_Loader::FRONTEND_HANDLERS_HANDLE ],
+			ELEMENTOR_VERSION,
+			true
+		);
 	}
 
 	public function render_markdown(): string {

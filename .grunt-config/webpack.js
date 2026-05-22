@@ -154,6 +154,7 @@ const frontendEntries = {
 	'tabs-preview-handler': path.resolve( __dirname, '../modules/atomic-widgets/elements/atomic-tabs/handlers/atomic-tabs-preview-handler.js' ),
 	'atomic-widgets-action-link-handler': path.resolve( __dirname, '../modules/atomic-widgets/assets/js/frontend/action-link-handlers.js' ),
 	'atomic-widgets-form-handler': path.resolve( __dirname, '../modules/atomic-widgets/assets/js/frontend/form-handlers.js' ),
+	'accordion-handler': path.resolve( __dirname, '../modules/atomic-widgets/elements/atomic-accordion/handlers/atomic-accordion-handler.js' ),
 };
 
 const externals = [

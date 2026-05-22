@@ -12,6 +12,7 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Definition;
+use Elementor\Modules\AtomicWidgets\Styles\Style_States;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 use Elementor\Modules\Components\PropTypes\Overridable_Prop_Type;
 
@@ -66,6 +67,10 @@ class Atomic_Accordion_Item extends Atomic_Element_Base {
 			'attributes' => Attributes_Prop_Type::make()
 				->meta( Overridable_Prop_Type::ignore() ),
 		];
+	}
+
+	protected function define_atomic_style_states(): array {
+		return [ Style_States::get_class_states_map()['selected'] ];
 	}
 
 	protected function define_atomic_controls(): array {

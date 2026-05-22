@@ -111,8 +111,9 @@ use Elementor\Modules\AtomicWidgets\Database\Atomic_Widgets_Database_Updater;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Tabs\Atomic_Tab_Content\Atomic_Tab_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion\Atomic_Accordion;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item\Atomic_Accordion_Item;
-use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Title\Atomic_Accordion_Item_Title;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Content\Atomic_Accordion_Item_Content;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Icon\Atomic_Accordion_Item_Icon;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Accordion\Atomic_Accordion_Item_Title\Atomic_Accordion_Item_Title;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form_Promotion;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Form_Success_Message\Form_Success_Message;
@@ -331,6 +332,7 @@ class Module extends BaseModule {
 			$elements_manager->register_element_type( new Atomic_Accordion_Item() );
 			$elements_manager->register_element_type( new Atomic_Accordion_Item_Title() );
 			$elements_manager->register_element_type( new Atomic_Accordion_Item_Content() );
+			$elements_manager->register_element_type( new Atomic_Accordion_Item_Icon() );
 		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
@@ -517,12 +519,17 @@ class Module extends BaseModule {
 			'[data-e-type="e-accordion-item-content"] { transition: grid-template-rows 0.3s ease; }',
 			// Open state: expand from 0fr to 1fr.
 			'[data-e-type="e-accordion-item"][open] > [data-e-type="e-accordion-item-content"] { grid-template-rows: 1fr !important; }',
+			// Chevron icon: rotate 180deg when item is open.
+			'[data-e-type="e-accordion-item-icon"] { transition: transform 0.3s ease; }',
+			'[data-e-type="e-accordion-item"][open] [data-e-type="e-accordion-item-icon"] { transform: rotate(180deg); }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $accordion_css );
 
 		// Editor: always show content expanded so items are editable.
 		$accordion_editor_css = implode( '', [
-			'.elementor-editor-active [data-e-type="e-accordion-item-content"] { grid-template-rows: 1fr !important; }',
+			// Override browser UA stylesheet that hides details > :not(summary) when closed.
+			'.elementor-editor-active details[data-e-type="e-accordion-item"] > :not([data-e-type="e-accordion-item-title"]) { display: block !important; }',
+			'.elementor-editor-active [data-e-type="e-accordion-item-content"] { display: grid !important; grid-template-rows: 1fr !important; }',
 			'.elementor-editor-active [data-e-type="e-accordion-item-content"] > div > .elementor-empty-view { min-height: 60px; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $accordion_editor_css );
