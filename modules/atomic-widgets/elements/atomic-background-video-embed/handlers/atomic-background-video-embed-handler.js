@@ -75,6 +75,15 @@ const loadVimeoAPI = () => {
 	} );
 };
 
+// --- Debounce utility ---
+const debounce = ( fn, delay ) => {
+	let timer;
+	return ( ...args ) => {
+		clearTimeout( timer );
+		timer = setTimeout( () => fn( ...args ), delay );
+	};
+};
+
 // --- Apply base positioning styles to a cover iframe ---
 // Uses transform centering (same pattern as .elementor-background-video-embed CSS).
 const applyIframeBaseStyles = ( iframe ) => {
@@ -139,14 +148,18 @@ const initYouTube = ( element, settings ) => {
 
 	let player = null;
 	let ytIframe = null;
+	let destroyed = false;
 
-	const onResize = () => {
+	const onResize = debounce( () => {
 		if ( ytIframe ) {
 			resizeIframeToCover( ytIframe, element );
 		}
-	};
+	}, 100 );
 
 	loadYouTubeAPI().then( ( YT ) => {
+		if ( destroyed ) {
+			return;
+		}
 		const playerVars = {
 			controls: 0,
 			rel: 0,
@@ -210,6 +223,7 @@ const initYouTube = ( element, settings ) => {
 
 	return {
 		destroy: () => {
+			destroyed = true;
 			window.removeEventListener( 'resize', onResize );
 			if ( player && 'function' === typeof player.destroy ) {
 				player.destroy();
@@ -235,7 +249,9 @@ const initVimeo = ( element, settings ) => {
 	iframe.setAttribute( 'tabindex', '-1' );
 	element.insertBefore( iframe, element.firstChild );
 
-	const onResize = () => resizeIframeToCover( iframe, element );
+	let destroyed = false;
+
+	const onResize = debounce( () => resizeIframeToCover( iframe, element ), 100 );
 	window.addEventListener( 'resize', onResize );
 
 	const params = new URLSearchParams( {
@@ -250,6 +266,10 @@ const initVimeo = ( element, settings ) => {
 	let player = null;
 
 	loadVimeoAPI().then( ( Vimeo ) => {
+		if ( destroyed ) {
+			return;
+		}
+
 		player = new Vimeo.Player( iframe );
 
 		player.ready().then( () => {
@@ -276,6 +296,7 @@ const initVimeo = ( element, settings ) => {
 
 	return {
 		destroy: () => {
+			destroyed = true;
 			window.removeEventListener( 'resize', onResize );
 			if ( player && 'function' === typeof player.destroy ) {
 				player.destroy();
