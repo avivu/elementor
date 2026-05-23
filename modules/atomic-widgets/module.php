@@ -508,39 +508,41 @@ class Module extends BaseModule {
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
 
-		// Frontend: pause button hidden by default; swapped via vanilla JS is-playing class.
-		// e-show-controls-false: hide entire controls area when show_controls setting is off.
-		$video_frontend_css = implode( '', [
-			'[data-e-type="e-background-video"] [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
-			'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
-			'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
-			'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
-		] );
-		wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO ) ) {
+			// Frontend: pause button hidden by default; swapped via vanilla JS is-playing class.
+			// e-show-controls-false: hide entire controls area when show_controls setting is off.
+			$video_frontend_css = implode( '', [
+				'[data-e-type="e-background-video"] [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
+				'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
+			] );
+			wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
 
-		// Editor: children are rendered INSIDE the parent Twig div (same structure as frontend).
-		// Positioning is handled by controls' own inline styles (position:absolute; right:16px; etc.).
-		// Only state-based show/hide rules needed here.
-		$video_editor_css = implode( '', [
-			// Min-height only on the empty view — once a widget is added the empty view is hidden
-			// and the root freely sizes to content height + content padding.
-			'.elementor-editor-active [data-e-type="e-background-video-content"] > .elementor-empty-view { min-height: 88px; }',
-			// Make the empty-view drop zone respect the content wrapper padding so the 16px gap is visible.
-			'.elementor-editor-active [data-e-type="e-background-video-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
-			// Show eicon-plus in center when no user content children (only Video Controls child exists).
-			'.elementor-editor-active [data-e-type="e-background-video"]:not(:has(> .elementor-element:not([data-e-type="e-background-video-controls"])))::after { font-family: eicons; content: "\e815"; font-size: 20px; color: #b5b5b5; pointer-events: none; margin: auto; }',
-			// Default state (no state selected): hide all buttons — controls only preview in Play/Pause states.
-			'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-play-btn"] { display: none !important; }',
-			'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
-			// Play state: video is playing — show pause btn, hide play btn.
-			'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
-			'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-play-btn"] { display: none !important; }',
-			// Pause state: video is paused — show play btn, hide pause btn.
-			'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-play-btn"] { display: flex !important; }',
-			'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
-		] );
-		wp_add_inline_style( 'elementor-frontend', $video_editor_css );
-		wp_add_inline_style( 'elementor-editor', $video_editor_css );
+			// Editor: children are rendered INSIDE the parent Twig div (same structure as frontend).
+			// Positioning is handled by controls' own inline styles (position:absolute; right:16px; etc.).
+			// Only state-based show/hide rules needed here.
+			$video_editor_css = implode( '', [
+				// Min-height only on the empty view — once a widget is added the empty view is hidden
+				// and the root freely sizes to content height + content padding.
+				'.elementor-editor-active [data-e-type="e-background-video-content"] > .elementor-empty-view { min-height: 88px; }',
+				// Make the empty-view drop zone respect the content wrapper padding so the 16px gap is visible.
+				'.elementor-editor-active [data-e-type="e-background-video-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
+				// Show eicon-plus in center when no user content children (only Video Controls child exists).
+				'.elementor-editor-active [data-e-type="e-background-video"]:not(:has(> .elementor-element:not([data-e-type="e-background-video-controls"])))::after { font-family: eicons; content: "\e815"; font-size: 20px; color: #b5b5b5; pointer-events: none; margin: auto; }',
+				// Default state (no state selected): hide all buttons — controls only preview in Play/Pause states.
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+				// Play state: video is playing — show pause btn, hide play btn.
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+				// Pause state: video is paused — show play btn, hide pause btn.
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-play-btn"] { display: flex !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+			] );
+			wp_add_inline_style( 'elementor-frontend', $video_editor_css );
+			wp_add_inline_style( 'elementor-editor', $video_editor_css );
+		}
 	}
 
 	private function enqueue_promotion_styles() {
