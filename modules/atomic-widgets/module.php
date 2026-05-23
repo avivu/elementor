@@ -125,6 +125,8 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Query_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Transform\Perspective_Origin_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Utils\Utils;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Self_Hosted_Video\Atomic_Self_Hosted_Video;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed_Content\Atomic_Background_Video_Embed_Content;
 use Elementor\Modules\AtomicWidgets\PropsResolver\Transformers\Styles\Span_Transformer;
 use Elementor\Modules\AtomicWidgets\PropsResolver\Transformers\Video_Src_Transformer;
 use Elementor\Modules\AtomicWidgets\PropTypes\Span_Prop_Type;
@@ -139,6 +141,7 @@ class Module extends BaseModule {
 	const ENFORCE_CAPABILITIES_EXPERIMENT = 'atomic_widgets_should_enforce_capabilities';
 	const EXPERIMENT_EDITOR_MCP = 'editor_mcp';
 	const EXPERIMENT_CSS_GRID = 'e_css_grid';
+	const EXPERIMENT_BACKGROUND_VIDEO_EMBED = 'e_background_video_embed';
 
 	const PACKAGES = [
 		'editor-canvas',
@@ -239,6 +242,15 @@ class Module extends BaseModule {
 		]);
 
 		Plugin::$instance->experiments->add_feature( [
+			'name' => self::EXPERIMENT_BACKGROUND_VIDEO_EMBED,
+			'title' => esc_html__( 'Background Video Embed', 'elementor' ),
+			'description' => esc_html__( 'Enable background video embed element with YouTube and Vimeo support.', 'elementor' ),
+			'hidden' => true,
+			'default' => Experiments_Manager::STATE_INACTIVE,
+			'release_status' => Experiments_Manager::RELEASE_STATUS_DEV,
+		] );
+
+		Plugin::$instance->experiments->add_feature( [
 			'name' => self::EXPERIMENT_CSS_GRID,
 			'title' => esc_html__( 'CSS Grid', 'elementor' ),
 			'description' => esc_html__( 'Enable CSS Grid layout for containers.', 'elementor' ),
@@ -311,6 +323,11 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Tab() );
 		$elements_manager->register_element_type( new Atomic_Tabs_Content_Area() );
 		$elements_manager->register_element_type( new Atomic_Tab_Content() );
+
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO_EMBED ) ) {
+			$elements_manager->register_element_type( new Atomic_Background_Video_Embed() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Embed_Content() );
+		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
 			$elements_manager->register_element_type( new Atomic_Form() );
@@ -484,6 +501,13 @@ class Module extends BaseModule {
 		] );
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
+
+		$embed_video_editor_css = implode( '', [
+			'.elementor-editor-active [data-e-type="e-background-video-embed"] iframe { display: none !important; }',
+			'.elementor-editor-active [data-e-type="e-background-video-embed"] { background: #1a1a2e; }',
+		] );
+		wp_add_inline_style( 'elementor-frontend', $embed_video_editor_css );
+		wp_add_inline_style( 'elementor-editor', $embed_video_editor_css );
 	}
 
 	private function enqueue_promotion_styles() {
