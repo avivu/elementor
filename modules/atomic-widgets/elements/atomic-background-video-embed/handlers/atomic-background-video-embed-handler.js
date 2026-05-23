@@ -236,6 +236,13 @@ register( {
 		}
 
 		const iframe = createBackgroundIframe( element );
+
+		// Hide the static twig-rendered preview now that the iframe is injected.
+		const preview = element.querySelector( '.e-bve-preview' );
+		if ( preview ) {
+			preview.style.display = 'none';
+		}
+
 		let playerPromise;
 
 		if ( 'youtube' === provider ) {

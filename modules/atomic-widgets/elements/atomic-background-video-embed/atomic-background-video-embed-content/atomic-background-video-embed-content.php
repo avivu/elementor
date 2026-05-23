@@ -9,6 +9,7 @@ use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
 use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
+use Elementor\Modules\AtomicWidgets\PropTypes\Size_Prop_Type;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Definition;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Variant;
 use Elementor\Modules\Components\PropTypes\Overridable_Prop_Type;
@@ -80,7 +81,16 @@ class Atomic_Background_Video_Embed_Content extends Atomic_Element_Base {
 					Style_Variant::make()
 						->add_prop( 'position', String_Prop_Type::generate( 'relative' ) )
 						->add_prop( 'z-index', String_Prop_Type::generate( '1' ) )
-						->add_prop( 'width', String_Prop_Type::generate( '100%' ) )
+						->add_prop( 'width', Size_Prop_Type::generate( [
+							'size' => 100,
+							'unit' => '%',
+						] ) )
+						->add_prop( 'display', String_Prop_Type::generate( 'flex' ) )
+						->add_prop( 'flex-direction', String_Prop_Type::generate( 'column' ) )
+						->add_prop( 'padding', Size_Prop_Type::generate( [
+							'size' => 16,
+							'unit' => 'px',
+						] ) )
 				),
 		];
 	}

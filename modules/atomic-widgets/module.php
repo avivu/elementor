@@ -502,12 +502,17 @@ class Module extends BaseModule {
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
 
-		$embed_video_editor_css = implode( '', [
+		$embed_video_css = implode( '', [
+			// Safety fallback: never show injected iframe in editor.
 			'.elementor-editor-active [data-e-type="e-background-video-embed"] iframe { display: none !important; }',
-			'.elementor-editor-active [data-e-type="e-background-video-embed"] { background: #1a1a2e; }',
+			// Show the empty-state placeholder only in the editor.
+			'.elementor-editor-active [data-e-type="e-background-video-embed"] .e-bve-empty { display: flex !important; }',
+			// Empty-view of the content slot needs minimum height so the drop zone is visible.
+			'.elementor-editor-active [data-e-type="e-background-video-embed-content"] > .elementor-empty-view { min-height: 88px; }',
+			'.elementor-editor-active [data-e-type="e-background-video-embed-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
 		] );
-		wp_add_inline_style( 'elementor-frontend', $embed_video_editor_css );
-		wp_add_inline_style( 'elementor-editor', $embed_video_editor_css );
+		wp_add_inline_style( 'elementor-frontend', $embed_video_css );
+		wp_add_inline_style( 'elementor-editor', $embed_video_css );
 	}
 
 	private function enqueue_promotion_styles() {

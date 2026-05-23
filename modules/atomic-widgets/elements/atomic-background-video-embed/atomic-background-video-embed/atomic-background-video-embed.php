@@ -67,8 +67,7 @@ class Atomic_Background_Video_Embed extends Atomic_Element_Base {
 		return [
 			'classes' => Classes_Prop_Type::make()
 				->default( [] ),
-			'source' => String_Prop_Type::make()
-				->default( 'https://www.youtube.com/watch?v=XHOmBV4js_E' ),
+			'source' => String_Prop_Type::make(),
 			'start_time' => Number_Prop_Type::make()
 				->default( null )
 				->meta( Dynamic_Prop_Type::ignore() )
@@ -136,8 +135,13 @@ class Atomic_Background_Video_Embed extends Atomic_Element_Base {
 			'base' => Style_Definition::make()
 				->add_variant(
 					Style_Variant::make()
+						->add_prop( 'display', String_Prop_Type::generate( 'flex' ) )
 						->add_prop( 'position', String_Prop_Type::generate( 'relative' ) )
 						->add_prop( 'overflow', String_Prop_Type::generate( 'hidden' ) )
+						->add_prop( 'width', Size_Prop_Type::generate( [
+							'size' => 100,
+							'unit' => '%',
+						] ) )
 						->add_prop( 'min-height', Size_Prop_Type::generate( [
 							'size' => 300,
 							'unit' => 'px',
