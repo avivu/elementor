@@ -500,15 +500,17 @@ class Module extends BaseModule {
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
 
-		$embed_video_css = implode( '', [
-			// Ensure the root element's drop zone is visible when empty.
-			'.elementor-editor-active [data-e-type="e-background-video-embed"] > .elementor-empty-view { min-height: 120px; }',
-			'.elementor-editor-active [data-e-type="e-background-video-embed"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
-			// Immediately position the injected iframe out of flow so the container never expands before onReady fires.
-			'[data-e-type="e-background-video-embed"] > iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: none; border: none; pointer-events: none; z-index: -1; }',
-		] );
-		wp_add_inline_style( 'elementor-frontend', $embed_video_css );
-		wp_add_inline_style( 'elementor-editor', $embed_video_css );
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO_EMBED ) ) {
+			$embed_video_css = implode( '', [
+				// Ensure the root element's drop zone is visible when empty.
+				'.elementor-editor-active [data-e-type="e-background-video-embed"] > .elementor-empty-view { min-height: 120px; }',
+				'.elementor-editor-active [data-e-type="e-background-video-embed"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
+				// Immediately position the injected iframe out of flow so the container never expands before onReady fires.
+				'[data-e-type="e-background-video-embed"] > iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: none; border: none; pointer-events: none; z-index: -1; }',
+			] );
+			wp_add_inline_style( 'elementor-frontend', $embed_video_css );
+			wp_add_inline_style( 'elementor-editor', $embed_video_css );
+		}
 	}
 
 	private function enqueue_promotion_styles() {
