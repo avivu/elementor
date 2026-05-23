@@ -8,7 +8,6 @@ use Elementor\Modules\AtomicWidgets\Controls\Types\Number_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Switch_Control;
 use Elementor\Modules\AtomicWidgets\Controls\Types\Text_Control;
 use Elementor\Modules\AtomicWidgets\DynamicTags\Dynamic_Prop_Type;
-use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed_Content\Atomic_Background_Video_Embed_Content;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
 use Elementor\Modules\AtomicWidgets\Elements\Loader\Frontend_Assets_Loader;
@@ -30,6 +29,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Atomic_Background_Video_Embed extends Atomic_Element_Base {
 	use Has_Element_Template;
+
+	public static $widget_description = 'Embed a YouTube or Vimeo video as a looping background, with any Elementor content layered on top.';
 
 	public function __construct( $data = [], $args = null ) {
 		parent::__construct( $data, $args );
@@ -76,12 +77,11 @@ class Atomic_Background_Video_Embed extends Atomic_Element_Base {
 				->default( null )
 				->meta( Dynamic_Prop_Type::ignore() )
 				->meta( 'suffix', 'SEC' ),
-			'autoplay' => Boolean_Prop_Type::make()->default( true ),
 			'mute' => Boolean_Prop_Type::make()->default( true ),
 			'loop' => Boolean_Prop_Type::make()->default( true ),
 			'play_on_mobile' => Boolean_Prop_Type::make()->default( false ),
 			'privacy_mode' => Boolean_Prop_Type::make()->default( false ),
-			'fallback_image' => Image_Prop_Type::make(),
+			'fallback_image' => Image_Prop_Type::make()->default_size( 'full' ),
 			'attributes' => Attributes_Prop_Type::make()->meta( Overridable_Prop_Type::ignore() ),
 		];
 	}
@@ -102,7 +102,6 @@ class Atomic_Background_Video_Embed extends Atomic_Element_Base {
 						->set_label( esc_html__( 'End Time', 'elementor' ) )
 						->set_min( 0 )
 						->set_max( 10000 ),
-					Switch_Control::bind_to( 'autoplay' )->set_label( esc_html__( 'Autoplay', 'elementor' ) ),
 					Switch_Control::bind_to( 'mute' )->set_label( esc_html__( 'Mute', 'elementor' ) ),
 					Switch_Control::bind_to( 'loop' )->set_label( esc_html__( 'Loop', 'elementor' ) ),
 					Switch_Control::bind_to( 'play_on_mobile' )->set_label( esc_html__( 'Play on Mobile', 'elementor' ) ),
@@ -124,27 +123,19 @@ class Atomic_Background_Video_Embed extends Atomic_Element_Base {
 		];
 	}
 
-	protected function define_default_children() {
-		return [
-			Atomic_Background_Video_Embed_Content::generate()->build(),
-		];
-	}
-
 	protected function define_base_styles(): array {
 		return [
 			'base' => Style_Definition::make()
 				->add_variant(
 					Style_Variant::make()
 						->add_prop( 'display', String_Prop_Type::generate( 'flex' ) )
+						->add_prop( 'flex-direction', String_Prop_Type::generate( 'column' ) )
 						->add_prop( 'position', String_Prop_Type::generate( 'relative' ) )
 						->add_prop( 'overflow', String_Prop_Type::generate( 'hidden' ) )
+						->add_prop( 'isolation', String_Prop_Type::generate( 'isolate' ) )
 						->add_prop( 'width', Size_Prop_Type::generate( [
 							'size' => 100,
 							'unit' => '%',
-						] ) )
-						->add_prop( 'min-height', Size_Prop_Type::generate( [
-							'size' => 300,
-							'unit' => 'px',
 						] ) )
 				),
 		];

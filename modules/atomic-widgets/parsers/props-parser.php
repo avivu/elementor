@@ -38,6 +38,14 @@ class Props_Parser {
 
 			$value = $props[ $key ] ?? null;
 
+			// TODO: Revisit this fix. When an optional Object_Prop_Type has shape fields with defaults
+			// (e.g. Image_Prop_Type with ->default_size()), get_default() returns an empty object whose
+			// required fields (e.g. src) fail validation. Skipping null optional props here is correct
+			// behavior, but this may have broader implications for the framework that need review.
+			if ( is_null( $value ) && ! $prop_type->is_required() ) {
+				continue;
+			}
+
 			$is_valid = $prop_type->validate( $value ?? $prop_type->get_default() );
 
 			if ( ! $is_valid ) {

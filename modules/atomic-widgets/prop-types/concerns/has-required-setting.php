@@ -9,7 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 trait Has_Required_Setting {
-	protected function is_required(): bool {
+	/**
+	 * TODO: Changed from protected to public to allow Props_Parser to call this externally.
+	 * This is a general framework change — review whether exposing is_required() publicly
+	 * is appropriate across all prop types before merging.
+	 */
+	public function is_required(): bool {
 		return $this->get_setting( 'required', false );
 	}
 

@@ -25,6 +25,7 @@ const getVimeoVideoId = ( url ) => {
 };
 
 // --- YouTube API loader ---
+// Chains with any existing onYouTubeIframeAPIReady handler to support multiple instances.
 const loadYouTubeAPI = () => {
 	return new Promise( ( resolve ) => {
 		if ( window.YT && window.YT.loaded ) {
@@ -40,14 +41,11 @@ const loadYouTubeAPI = () => {
 			firstScriptTag.parentNode.insertBefore( tag, firstScriptTag );
 		}
 
-		const checkYT = () => {
-			if ( window.YT && window.YT.loaded ) {
-				resolve( window.YT );
-			} else {
-				setTimeout( checkYT, 350 );
-			}
+		const prevCallback = window.onYouTubeIframeAPIReady;
+		window.onYouTubeIframeAPIReady = () => {
+			prevCallback?.();
+			resolve( window.YT );
 		};
-		checkYT();
 	} );
 };
 
@@ -77,39 +75,83 @@ const loadVimeoAPI = () => {
 	} );
 };
 
-// --- Create background iframe ---
-const createBackgroundIframe = ( element ) => {
-	const iframe = document.createElement( 'iframe' );
+// --- Apply base positioning styles to a cover iframe ---
+// Uses transform centering (same pattern as .elementor-background-video-embed CSS).
+const applyIframeBaseStyles = ( iframe ) => {
 	Object.assign( iframe.style, {
 		position: 'absolute',
-		inset: '0',
-		width: '100%',
-		height: '100%',
+		top: '50%',
+		left: '50%',
+		transform: 'translate(-50%, -50%)',
+		maxWidth: 'none',
 		border: 'none',
 		pointerEvents: 'none',
-		zIndex: '0',
+		zIndex: '-1',
 	} );
-	iframe.setAttribute( 'allow', 'autoplay; fullscreen' );
-	iframe.setAttribute( 'aria-hidden', 'true' );
-	iframe.setAttribute( 'tabindex', '-1' );
-	element.insertBefore( iframe, element.firstChild );
-	return iframe;
+};
+
+// --- Resize iframe to cover the container (like background-size: cover) ---
+const resizeIframeToCover = ( iframe, container, aspectRatio = 16 / 9 ) => {
+	const containerWidth = container.offsetWidth;
+	const containerHeight = container.offsetHeight;
+
+	if ( ! containerWidth || ! containerHeight ) {
+		return;
+	}
+
+	const isWidthFixed = containerWidth / containerHeight > aspectRatio;
+	const width = isWidthFixed ? containerWidth : containerHeight * aspectRatio;
+	const height = isWidthFixed ? containerWidth / aspectRatio : containerHeight;
+
+	iframe.style.width = width + 'px';
+	iframe.style.height = height + 'px';
+};
+
+// --- Hide the static preview div ---
+const hidePreview = ( element ) => {
+	const preview = element.querySelector( '.e-bve-preview' );
+	if ( preview ) {
+		preview.style.display = 'none';
+	}
+};
+
+// --- Show fallback image ---
+const showFallback = ( element, fallbackUrl ) => {
+	if ( fallbackUrl ) {
+		element.style.backgroundImage = `url(${ fallbackUrl })`;
+		element.style.backgroundSize = 'cover';
+		element.style.backgroundPosition = 'center';
+	}
 };
 
 // --- YouTube initialization ---
-const initYouTube = ( iframe, settings ) => {
+// Uses a <div> placeholder — the proven pattern (see youtube-handler.js).
+// YT.Player replaces the div with its own iframe; onReady gives us the real iframe.
+const initYouTube = ( element, settings ) => {
 	const videoId = getYouTubeVideoId( settings.source );
 	if ( ! videoId ) {
 		return null;
 	}
 
-	return loadYouTubeAPI().then( ( YT ) => {
+	// Create a <div> placeholder; YT will replace it with its own <iframe>.
+	const placeholder = document.createElement( 'div' );
+	element.insertBefore( placeholder, element.firstChild );
+
+	let player = null;
+	let ytIframe = null;
+
+	const onResize = () => {
+		if ( ytIframe ) {
+			resizeIframeToCover( ytIframe, element );
+		}
+	};
+
+	loadYouTubeAPI().then( ( YT ) => {
 		const playerVars = {
 			controls: 0,
 			rel: 0,
-			showinfo: 0,
 			modestbranding: 1,
-			autoplay: settings.autoplay ? 1 : 0,
+			autoplay: 1,
 			loop: settings.loop ? 1 : 0,
 			mute: settings.mute ? 1 : 0,
 			playsinline: 1,
@@ -132,12 +174,23 @@ const initYouTube = ( iframe, settings ) => {
 			playerVars,
 			events: {
 				onReady: ( event ) => {
+					// YT has replaced the placeholder div with its own <iframe>.
+					// Apply base positioning + cover sizing to the real YT iframe.
+					ytIframe = event.target.getIframe();
+					applyIframeBaseStyles( ytIframe );
+					resizeIframeToCover( ytIframe, element );
+					ytIframe.setAttribute( 'aria-hidden', 'true' );
+					ytIframe.setAttribute( 'tabindex', '-1' );
+					ytIframe.setAttribute( 'allow', 'autoplay; fullscreen' );
+
+					window.addEventListener( 'resize', onResize );
+
+					hidePreview( element );
+
 					if ( settings.mute ) {
 						event.target.mute();
 					}
-					if ( settings.autoplay ) {
-						event.target.playVideo();
-					}
+					event.target.playVideo();
 				},
 				onStateChange: ( event ) => {
 					if ( event.data === YT.PlayerState.ENDED && settings.loop ) {
@@ -152,29 +205,56 @@ const initYouTube = ( iframe, settings ) => {
 			playerOptions.origin = window.location.hostname;
 		}
 
-		return new YT.Player( iframe, playerOptions );
+		player = new YT.Player( placeholder, playerOptions );
 	} );
+
+	return {
+		destroy: () => {
+			window.removeEventListener( 'resize', onResize );
+			if ( player && 'function' === typeof player.destroy ) {
+				player.destroy();
+			} else if ( placeholder && placeholder.parentNode ) {
+				placeholder.parentNode.removeChild( placeholder );
+			}
+		},
+	};
 };
 
 // --- Vimeo initialization ---
-const initVimeo = ( iframe, settings ) => {
+const initVimeo = ( element, settings ) => {
 	const videoId = getVimeoVideoId( settings.source );
 	if ( ! videoId ) {
 		return null;
 	}
 
+	const iframe = document.createElement( 'iframe' );
+	applyIframeBaseStyles( iframe );
+	resizeIframeToCover( iframe, element );
+	iframe.setAttribute( 'allow', 'autoplay; fullscreen' );
+	iframe.setAttribute( 'aria-hidden', 'true' );
+	iframe.setAttribute( 'tabindex', '-1' );
+	element.insertBefore( iframe, element.firstChild );
+
+	const onResize = () => resizeIframeToCover( iframe, element );
+	window.addEventListener( 'resize', onResize );
+
 	const params = new URLSearchParams( {
 		background: 1,
 		autoplay: 1,
 		loop: settings.loop ? 1 : 0,
-		muted: 1,
 		dnt: settings.privacy_mode ? 1 : 0,
 	} );
 
 	iframe.src = `https://player.vimeo.com/video/${ videoId }?${ params.toString() }`;
 
-	return loadVimeoAPI().then( ( Vimeo ) => {
-		const player = new Vimeo.Player( iframe );
+	let player = null;
+
+	loadVimeoAPI().then( ( Vimeo ) => {
+		player = new Vimeo.Player( iframe );
+
+		player.ready().then( () => {
+			hidePreview( element );
+		} );
 
 		if ( settings.start_time ) {
 			player.setCurrentTime( Number( settings.start_time ) );
@@ -192,21 +272,19 @@ const initVimeo = ( iframe, settings ) => {
 				}
 			} );
 		}
-
-		return player;
 	} );
-};
 
-// --- Mobile detection ---
-const isMobile = () => /Mobi|Android/i.test( navigator.userAgent );
-
-// --- Show fallback image ---
-const showFallback = ( element, fallbackUrl ) => {
-	if ( fallbackUrl ) {
-		element.style.backgroundImage = `url(${ fallbackUrl })`;
-		element.style.backgroundSize = 'cover';
-		element.style.backgroundPosition = 'center';
-	}
+	return {
+		destroy: () => {
+			window.removeEventListener( 'resize', onResize );
+			if ( player && 'function' === typeof player.destroy ) {
+				player.destroy();
+			}
+			if ( iframe && iframe.parentNode ) {
+				iframe.parentNode.removeChild( iframe );
+			}
+		},
+	};
 };
 
 // --- Main registration ---
@@ -214,15 +292,18 @@ register( {
 	elementType: 'e-background-video-embed',
 	id: 'e-background-video-embed-handler',
 	callback: ( { element } ) => {
-		const settings = JSON.parse( element.dataset.settings || '{}' );
+		const settings = JSON.parse( element.getAttribute( 'data-settings' ) || '{}' );
 
-		// In editor: show fallback only, no live video
-		if ( window.elementorFrontend?.isEditMode() ) {
-			showFallback( element, settings.fallback_image_url );
-			return;
-		}
-
-		// Mobile: show fallback if play_on_mobile is off
+		// Mobile: show fallback if play_on_mobile is off.
+		// Use Elementor's device mode (works in editor preview) with viewport-width fallback.
+		const isMobile = () => {
+			try {
+				return 'mobile' === elementorFrontend.getCurrentDeviceMode();
+			} catch ( e ) {
+				const breakpoint = window.elementorFrontend?.config?.responsive?.activeBreakpoints?.mobile?.value ?? 767;
+				return window.innerWidth <= breakpoint;
+			}
+		};
 		if ( isMobile() && ! settings.play_on_mobile ) {
 			showFallback( element, settings.fallback_image_url );
 			return;
@@ -235,33 +316,54 @@ register( {
 			return;
 		}
 
-		const iframe = createBackgroundIframe( element );
+		// Skip re-initialization when only style controls changed (video settings are unchanged).
+		// The element re-renders on every control change in the editor; re-creating the iframe
+		// each time causes a visible jump. We detect this by caching a key of the video-relevant
+		// settings on the element and comparing on each render.
+		const videoKey = JSON.stringify( {
+			source: settings.source,
+			loop: settings.loop,
+			mute: settings.mute,
+			start_time: settings.start_time,
+			end_time: settings.end_time,
+			privacy_mode: settings.privacy_mode,
+			play_on_mobile: settings.play_on_mobile,
+		} );
 
-		// Hide the static twig-rendered preview now that the iframe is injected.
-		const preview = element.querySelector( '.e-bve-preview' );
-		if ( preview ) {
-			preview.style.display = 'none';
+		if ( element._bveKey === videoKey && element._bveHandle ) {
+			return () => {
+				// Only fully clean up when the element is actually removed from the DOM.
+				// Re-renders (style changes) keep element.isConnected === true — skip cleanup.
+				if ( ! element.isConnected ) {
+					element._bveHandle?.destroy();
+					delete element._bveHandle;
+					delete element._bveKey;
+				}
+			};
 		}
 
-		let playerPromise;
+		// Video settings changed (or first render) — destroy any existing player and reinit.
+		if ( element._bveHandle ) {
+			element._bveHandle.destroy();
+			element._bveHandle = null;
+		}
+
+		let handle = null;
 
 		if ( 'youtube' === provider ) {
-			playerPromise = initYouTube( iframe, settings );
+			handle = initYouTube( element, settings );
 		} else if ( 'vimeo' === provider ) {
-			playerPromise = initVimeo( iframe, settings );
+			handle = initVimeo( element, settings );
 		}
 
-		return () => {
-			if ( playerPromise ) {
-				playerPromise.then( ( player ) => {
-					if ( player && 'function' === typeof player.destroy ) {
-						player.destroy();
-					}
-				} );
-			}
+		element._bveKey = videoKey;
+		element._bveHandle = handle;
 
-			if ( iframe && iframe.parentNode ) {
-				iframe.parentNode.removeChild( iframe );
+		return () => {
+			if ( ! element.isConnected ) {
+				element._bveHandle?.destroy();
+				delete element._bveHandle;
+				delete element._bveKey;
 			}
 		};
 	},

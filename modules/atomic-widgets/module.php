@@ -126,7 +126,6 @@ use Elementor\Modules\AtomicWidgets\PropTypes\Transform\Perspective_Origin_Prop_
 use Elementor\Modules\AtomicWidgets\Utils\Utils;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Self_Hosted_Video\Atomic_Self_Hosted_Video;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed;
-use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video_Embed\Atomic_Background_Video_Embed_Content\Atomic_Background_Video_Embed_Content;
 use Elementor\Modules\AtomicWidgets\PropsResolver\Transformers\Styles\Span_Transformer;
 use Elementor\Modules\AtomicWidgets\PropsResolver\Transformers\Video_Src_Transformer;
 use Elementor\Modules\AtomicWidgets\PropTypes\Span_Prop_Type;
@@ -326,7 +325,6 @@ class Module extends BaseModule {
 
 		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO_EMBED ) ) {
 			$elements_manager->register_element_type( new Atomic_Background_Video_Embed() );
-			$elements_manager->register_element_type( new Atomic_Background_Video_Embed_Content() );
 		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
@@ -503,13 +501,11 @@ class Module extends BaseModule {
 		wp_add_inline_style( 'elementor-editor', $inline_css );
 
 		$embed_video_css = implode( '', [
-			// Safety fallback: never show injected iframe in editor.
-			'.elementor-editor-active [data-e-type="e-background-video-embed"] iframe { display: none !important; }',
-			// Show the empty-state placeholder only in the editor.
-			'.elementor-editor-active [data-e-type="e-background-video-embed"] .e-bve-empty { display: flex !important; }',
-			// Empty-view of the content slot needs minimum height so the drop zone is visible.
-			'.elementor-editor-active [data-e-type="e-background-video-embed-content"] > .elementor-empty-view { min-height: 88px; }',
-			'.elementor-editor-active [data-e-type="e-background-video-embed-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
+			// Ensure the root element's drop zone is visible when empty.
+			'.elementor-editor-active [data-e-type="e-background-video-embed"] > .elementor-empty-view { min-height: 120px; }',
+			'.elementor-editor-active [data-e-type="e-background-video-embed"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
+			// Immediately position the injected iframe out of flow so the container never expands before onReady fires.
+			'[data-e-type="e-background-video-embed"] > iframe { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: none; border: none; pointer-events: none; z-index: -1; }',
 		] );
 		wp_add_inline_style( 'elementor-frontend', $embed_video_css );
 		wp_add_inline_style( 'elementor-editor', $embed_video_css );
