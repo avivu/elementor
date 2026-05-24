@@ -10,15 +10,9 @@ register( {
 			return;
 		}
 
-		video.addEventListener( 'play', () => {
-			element.classList.add( 'is-playing' );
-		} );
-
-		video.addEventListener( 'pause', () => {
-			element.classList.remove( 'is-playing' );
-		} );
-
-		element.addEventListener( 'click', ( event ) => {
+		const onPlay = () => element.classList.add( 'is-playing' );
+		const onPause = () => element.classList.remove( 'is-playing' );
+		const onClick = ( event ) => {
 			const playBtn = event.target.closest( '[data-e-type="e-background-video-play-btn"]' );
 			const pauseBtn = event.target.closest( '[data-e-type="e-background-video-pause-btn"]' );
 
@@ -27,6 +21,16 @@ register( {
 			} else if ( pauseBtn ) {
 				video.pause();
 			}
-		} );
+		};
+
+		video.addEventListener( 'play', onPlay );
+		video.addEventListener( 'pause', onPause );
+		element.addEventListener( 'click', onClick );
+
+		return () => {
+			video.removeEventListener( 'play', onPlay );
+			video.removeEventListener( 'pause', onPause );
+			element.removeEventListener( 'click', onClick );
+		};
 	},
 } );

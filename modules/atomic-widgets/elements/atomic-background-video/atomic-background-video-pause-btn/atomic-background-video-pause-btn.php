@@ -109,6 +109,12 @@ class Atomic_Background_Video_Pause_Btn extends Atomic_Element_Base {
 		return 'button';
 	}
 
+	protected function build_template_context(): array {
+		return array_merge( $this->build_base_template_context(), [
+			'aria_label' => esc_attr__( 'Pause video', 'elementor' ),
+		] );
+	}
+
 	protected function get_templates(): array {
 		return [
 			'elementor/elements/atomic-background-video-pause-btn' => __DIR__ . '/atomic-background-video-pause-btn.html.twig',
