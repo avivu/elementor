@@ -516,7 +516,9 @@ class Module extends BaseModule {
 				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
 				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
 				'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
-				'[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video-pause-btn"] { color: #fff; }',
+				'[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video-pause-btn"] { color: #fff; width: 56px !important; height: 56px !important; }',
+			'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"] { border: none !important; }',
+			'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:focus, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:focus { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }',
 			] );
 			wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
 
@@ -531,7 +533,10 @@ class Module extends BaseModule {
 				'.elementor-editor-active [data-e-type="e-background-video-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
 				// Show eicon-plus in center when no user content children (only Video Controls child exists).
 				'.elementor-editor-active [data-e-type="e-background-video"]:not(:has(> .elementor-element:not([data-e-type="e-background-video-controls"])))::after { font-family: eicons; content: "\e815"; font-size: 20px; color: #b5b5b5; pointer-events: none; margin: auto; }',
-				// Default state (no state selected): hide all buttons — controls only preview in Play/Pause states.
+				// Raise controls and buttons above Elementor element overlays so canvas clicks reach them.
+				'.elementor-editor-active [data-e-type="e-background-video-controls"] { z-index: 100 !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video-play-btn"], .elementor-editor-active [data-e-type="e-background-video-pause-btn"] { z-index: 100 !important; }',
+				// Default state (no state selected): both buttons hidden — switch to Play/Pause state to edit them.
 				'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-play-btn"] { display: none !important; }',
 				'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
 				// Play state: video is playing — show pause btn, hide play btn.
