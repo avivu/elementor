@@ -2,12 +2,10 @@
 namespace Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Controls;
 
 use Elementor\Modules\AtomicWidgets\Controls\Section;
-use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video\Atomic_Background_Video;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Pause_Btn\Atomic_Background_Video_Pause_Btn;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Play_Btn\Atomic_Background_Video_Play_Btn;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Atomic_Element_Base;
 use Elementor\Modules\AtomicWidgets\Elements\Base\Has_Element_Template;
-use Elementor\Modules\AtomicWidgets\Elements\Base\Render_Context;
 use Elementor\Modules\AtomicWidgets\PropTypes\Attributes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Classes_Prop_Type;
 use Elementor\Modules\AtomicWidgets\PropTypes\Primitives\String_Prop_Type;
@@ -119,14 +117,5 @@ class Atomic_Background_Video_Controls extends Atomic_Element_Base {
 		return [
 			'elementor/elements/atomic-background-video-controls' => __DIR__ . '/atomic-background-video-controls.html.twig',
 		];
-	}
-
-	protected function build_template_context(): array {
-		$context = Render_Context::get( Atomic_Background_Video::class );
-		$show_controls = $context['show_controls'] ?? true;
-
-		return array_merge( $this->build_base_template_context(), [
-			'show_controls' => $show_controls,
-		] );
 	}
 }
