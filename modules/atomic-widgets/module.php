@@ -109,6 +109,11 @@ use Elementor\Modules\AtomicWidgets\Styles\Size_Constants;
 use Elementor\Modules\AtomicWidgets\Styles\Style_Schema;
 use Elementor\Modules\AtomicWidgets\Database\Atomic_Widgets_Database_Updater;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Tabs\Atomic_Tab_Content\Atomic_Tab_Content;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video\Atomic_Background_Video;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Content\Atomic_Background_Video_Content;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Controls\Atomic_Background_Video_Controls;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Play_Btn\Atomic_Background_Video_Play_Btn;
+use Elementor\Modules\AtomicWidgets\Elements\Atomic_Background_Video\Atomic_Background_Video_Pause_Btn\Atomic_Background_Video_Pause_Btn;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Atomic_Form_Promotion;
 use Elementor\Modules\AtomicWidgets\Elements\Atomic_Form\Form_Success_Message\Form_Success_Message;
@@ -139,6 +144,7 @@ class Module extends BaseModule {
 	const ENFORCE_CAPABILITIES_EXPERIMENT = 'atomic_widgets_should_enforce_capabilities';
 	const EXPERIMENT_EDITOR_MCP = 'editor_mcp';
 	const EXPERIMENT_CSS_GRID = 'e_css_grid';
+	const EXPERIMENT_BACKGROUND_VIDEO = 'e_background_video';
 
 	const PACKAGES = [
 		'editor-canvas',
@@ -239,6 +245,15 @@ class Module extends BaseModule {
 		]);
 
 		Plugin::$instance->experiments->add_feature( [
+			'name' => self::EXPERIMENT_BACKGROUND_VIDEO,
+			'title' => esc_html__( 'Background Video', 'elementor' ),
+			'description' => esc_html__( 'Enable the Background Video element.', 'elementor' ),
+			'hidden' => true,
+			'default' => Experiments_Manager::STATE_INACTIVE,
+			'release_status' => Experiments_Manager::RELEASE_STATUS_DEV,
+		] );
+
+		Plugin::$instance->experiments->add_feature( [
 			'name' => self::EXPERIMENT_CSS_GRID,
 			'title' => esc_html__( 'CSS Grid', 'elementor' ),
 			'description' => esc_html__( 'Enable CSS Grid layout for containers.', 'elementor' ),
@@ -311,6 +326,14 @@ class Module extends BaseModule {
 		$elements_manager->register_element_type( new Atomic_Tab() );
 		$elements_manager->register_element_type( new Atomic_Tabs_Content_Area() );
 		$elements_manager->register_element_type( new Atomic_Tab_Content() );
+
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO ) ) {
+			$elements_manager->register_element_type( new Atomic_Background_Video() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Content() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Controls() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Play_Btn() );
+			$elements_manager->register_element_type( new Atomic_Background_Video_Pause_Btn() );
+		}
 
 		if ( \Elementor\Utils::has_pro() && Plugin::$instance->experiments->is_feature_active( 'e_pro_atomic_form' ) ) {
 			$elements_manager->register_element_type( new Atomic_Form() );
@@ -484,6 +507,53 @@ class Module extends BaseModule {
 		] );
 		wp_add_inline_style( 'elementor-frontend', $inline_css );
 		wp_add_inline_style( 'elementor-editor', $inline_css );
+
+		if ( Plugin::$instance->experiments->is_feature_active( self::EXPERIMENT_BACKGROUND_VIDEO ) ) {
+			// Frontend: pause button hidden by default; swapped via vanilla JS is-playing class.
+			// e-show-controls-false: hide entire controls area when show_controls setting is off.
+			$video_frontend_css = implode( '', [
+				'[data-e-type="e-background-video"] [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
+				'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
+				// TODO: width/height use !important because the .e-con class (applied to all atomic elements)
+				// sets width via --container-max-width CSS var which overrides our compiled base-style class.
+				// This is a systemic specificity issue with e-con — needs a proper fix at the framework level.
+				'[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video-pause-btn"] { color: #fff; width: 56px !important; height: 56px !important; }',
+				// Scoped to `button` tag + parent to beat theme selectors like `[type=button] { border: 1px solid ... }`.
+				// !important needed because theme CSS may load after elementor-frontend.
+				'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"] { border: none !important; }',
+				'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:focus, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:focus { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }',
+			] );
+			wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
+
+			// Editor: children are rendered INSIDE the parent Twig div (same structure as frontend).
+			// Positioning is handled by controls' own inline styles (position:absolute; right:16px; etc.).
+			// Only state-based show/hide rules needed here.
+			$video_editor_css = implode( '', [
+				// Min-height only on the empty view — once a widget is added the empty view is hidden
+				// and the root freely sizes to content height + content padding.
+				'.elementor-editor-active [data-e-type="e-background-video-content"] > .elementor-empty-view { min-height: 88px; }',
+				// Make the empty-view drop zone respect the content wrapper padding so the 16px gap is visible.
+				'.elementor-editor-active [data-e-type="e-background-video-content"] .elementor-empty-view .elementor-first-add { inset: 16px; }',
+				// Show eicon-plus in center when no user content children (only Video Controls child exists).
+				'.elementor-editor-active [data-e-type="e-background-video"]:not(:has(> .elementor-element:not([data-e-type="e-background-video-controls"])))::after { font-family: eicons; content: "\e815"; font-size: 20px; color: #b5b5b5; pointer-events: none; margin: auto; }',
+				// Raise controls and buttons above Elementor element overlays so canvas clicks reach them.
+				'.elementor-editor-active [data-e-type="e-background-video-controls"] { z-index: 100 !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video-play-btn"], .elementor-editor-active [data-e-type="e-background-video-pause-btn"] { z-index: 100 !important; }',
+				// Default state (no state selected): both buttons hidden — switch to Play/Pause state to edit them.
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-default [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+				// Play state: video is playing — show pause btn, hide play btn.
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-play [data-e-type="e-background-video-play-btn"] { display: none !important; }',
+				// Pause state: video is paused — show play btn, hide pause btn.
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-play-btn"] { display: flex !important; }',
+				'.elementor-editor-active [data-e-type="e-background-video"].video-state-pause [data-e-type="e-background-video-pause-btn"] { display: none !important; }',
+			] );
+			wp_add_inline_style( 'elementor-frontend', $video_editor_css );
+			wp_add_inline_style( 'elementor-editor', $video_editor_css );
+		}
 	}
 
 	private function enqueue_promotion_styles() {
