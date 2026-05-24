@@ -516,6 +516,7 @@ class Module extends BaseModule {
 				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
 				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
 				'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
+				'[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video-pause-btn"] { color: #fff; }',
 			] );
 			wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
 
