@@ -84,6 +84,7 @@ class Atomic_Background_Video_Play_Btn extends Atomic_Element_Base {
 				'unit' => 'px',
 			] ),
 			'cursor'          => String_Prop_Type::generate( 'pointer' ),
+			'color'           => String_Prop_Type::generate( '#fff' ),
 		];
 
 		return [
