@@ -516,9 +516,14 @@ class Module extends BaseModule {
 				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-play-btn"] { display: none !important; }',
 				'[data-e-type="e-background-video"].is-playing [data-e-type="e-background-video-pause-btn"] { display: flex !important; }',
 				'[data-e-type="e-background-video"].e-show-controls-false [data-e-type="e-background-video-controls"] { display: none !important; }',
+				// TODO: width/height use !important because the .e-con class (applied to all atomic elements)
+				// sets width via --container-max-width CSS var which overrides our compiled base-style class.
+				// This is a systemic specificity issue with e-con — needs a proper fix at the framework level.
 				'[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video-pause-btn"] { color: #fff; width: 56px !important; height: 56px !important; }',
-			'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"] { border: none !important; }',
-			'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:focus, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:focus { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }',
+				// Scoped to `button` tag + parent to beat theme selectors like `[type=button] { border: 1px solid ... }`.
+				// !important needed because theme CSS may load after elementor-frontend.
+				'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"], [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"] { border: none !important; }',
+				'[data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-play-btn"]:focus, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:hover, [data-e-type="e-background-video"] button[data-e-type="e-background-video-pause-btn"]:focus { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }',
 			] );
 			wp_add_inline_style( 'elementor-frontend', $video_frontend_css );
 
