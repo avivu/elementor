@@ -59,6 +59,7 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 	}
 
 	public function get_icon() {
+		// TODO: Replace 'eicon-video' with a dedicated background-video icon once it's added to the eicons font.
 		return 'eicon-video';
 	}
 
