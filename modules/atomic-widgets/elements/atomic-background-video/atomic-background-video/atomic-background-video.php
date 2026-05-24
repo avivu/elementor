@@ -162,6 +162,7 @@ class Atomic_Background_Video extends Atomic_Element_Base {
 				'size' => 100,
 				'unit' => '%',
 			] ),
+			'padding'  => String_Prop_Type::generate( '0' ),
 		];
 
 		return [

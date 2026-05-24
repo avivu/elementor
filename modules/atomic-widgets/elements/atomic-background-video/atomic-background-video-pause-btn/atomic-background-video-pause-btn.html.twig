@@ -6,7 +6,6 @@
     data-interaction-id="{{ interaction_id }}"
     data-interactions="{{ interactions | json_encode | e('html_attr') }}"
     aria-label="Pause video"
-    style="display:none; align-items:center; justify-content:center; width:56px; height:56px; cursor:pointer; border:none; background:transparent; padding:0;"
     {% if settings.attributes is defined and settings.attributes is not empty %}
         {{ settings.attributes | raw }}
     {% endif %}

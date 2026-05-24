@@ -91,6 +91,8 @@ class Atomic_Background_Video_Controls extends Atomic_Element_Base {
 				'size' => 8,
 				'unit' => 'px',
 			] ),
+			'width'            => String_Prop_Type::generate( 'auto' ),
+			'transform'        => String_Prop_Type::generate( 'translateZ(0)' ),
 		];
 
 		return [
