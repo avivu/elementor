@@ -79,6 +79,7 @@ class Module extends BaseModule {
 	private function get_app_js_config(): array {
 		return [
 			'is_unread' => Options::has_unread_notifications(),
+			'admin_url' => admin_url(),
 		];
 	}
 

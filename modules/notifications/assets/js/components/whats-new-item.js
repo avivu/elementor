@@ -87,6 +87,13 @@ const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabe
 			>
 				{ getButtonLabel() }
 			</Button>
+			{ 'done' === status && (
+				<Typography variant="caption" color="text.secondary" sx={ { display: 'block', mt: 0.5 } }>
+					<Link href={ elementorNotifications.admin_url } target="_blank" color="inherit" underline="always">
+						{ __( 'Open WP Admin to get started', 'elementor' ) }
+					</Link>
+				</Typography>
+			) }
 			{ 'error' === status && (
 				<Typography variant="caption" color="error.main" sx={ { display: 'block', mt: 0.5 } }>
 					{ errorMsg }
