@@ -81,7 +81,7 @@ const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabe
 			<Button
 				variant="contained"
 				size="small"
-				color="promotion"
+				color="primary"
 				disabled={ isDisabled }
 				onClick={ ! isDisabled ? handleInstall : undefined }
 			>
