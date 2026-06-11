@@ -14,7 +14,6 @@ class API {
 	 * reaches the browser, protecting against a compromised CDN response.
 	 */
 	const ALLOWED_INSTALL_SLUGS = [
-		'angie',
 		'site-mailer',
 		'image-optimization',
 		'pojo-accessibility',
