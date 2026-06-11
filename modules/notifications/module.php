@@ -89,14 +89,19 @@ class Module extends BaseModule {
 	}
 
 	public function ajax_get_notifications() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			throw new \Exception( 'Insufficient permissions' );
 		}
 
 		$notifications = API::get_notifications_by_conditions( true );
 
+		$is_admin = current_user_can( 'manage_options' );
+
 		$installed = Options::get_notifications_installed();
-		$notifications = array_values( array_filter( $notifications, function( $n ) use ( $installed ) {
+		$notifications = array_values( array_filter( $notifications, function( $n ) use ( $installed, $is_admin ) {
+			if ( ! empty( $n['installPlugin'] ) && ! $is_admin ) {
+				return false;
+			}
 			return ! in_array( $n['id'], $installed, true );
 		} ) );
 
