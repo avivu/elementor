@@ -87,6 +87,7 @@ class API {
 
 		if ( ! in_array( $notification['installPlugin'], static::ALLOWED_INSTALL_SLUGS, true ) ) {
 			unset( $notification['installPlugin'] );
+			unset( $notification['installLabel'] );
 			unset( $notification['ctaActivate'] );
 		}
 
