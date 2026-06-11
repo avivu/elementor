@@ -178,7 +178,7 @@ export const WhatsNewItem = ( { item, itemIndex, itemsLength, setIsOpen } ) => {
 					<InstallPluginButton
 						slug={ item.installPlugin }
 						notificationId={ item.id }
-						installLabel={ item.cta || __( 'Install Plugin', 'elementor' ) }
+						installLabel={ item.installLabel || item.cta || __( 'Install Plugin', 'elementor' ) }
 						activateLabel={ item.ctaActivate }
 					/>
 				</Box>
