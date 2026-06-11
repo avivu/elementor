@@ -6,7 +6,7 @@ import { WrapperWithLink } from './wrapper-with-link';
 import { WhatsNewItemThumbnail } from './whats-new-item-thumbnail';
 import { WhatsNewItemChips } from './whats-new-item-chips';
 
-const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabel } ) => {
+const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabel, errorText, postInstallLink, postInstallText } ) => {
 	const [ status, setStatus ] = useState( 'idle' ); // Idle | installing | activating | done | error
 	const [ errorMsg, setErrorMsg ] = useState( '' );
 
@@ -40,7 +40,7 @@ const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabe
 			dismissCard();
 		} catch ( err ) {
 			setStatus( 'error' );
-			setErrorMsg( err?.message || __( 'Activation failed', 'elementor' ) );
+			setErrorMsg( errorText || err?.message || __( 'Activation failed', 'elementor' ) );
 		}
 	};
 
@@ -60,7 +60,7 @@ const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabe
 				await findAndActivate();
 			} else {
 				setStatus( 'error' );
-				setErrorMsg( err?.message || __( 'Installation failed', 'elementor' ) );
+				setErrorMsg( errorText || err?.message || __( 'Installation failed', 'elementor' ) );
 			}
 		}
 	};
@@ -87,10 +87,10 @@ const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabe
 			>
 				{ getButtonLabel() }
 			</Button>
-			{ 'done' === status && (
+			{ 'done' === status && postInstallLink && (
 				<Typography variant="caption" color="text.secondary" sx={ { display: 'block', mt: 0.5 } }>
-					<Link href={ elementorNotifications.admin_url } target="_blank" color="inherit" underline="always">
-						{ __( 'Open WP Admin to get started', 'elementor' ) }
+					<Link href={ postInstallLink } target="_blank" color="inherit" underline="always">
+						{ postInstallText || __( 'Explore and get started', 'elementor' ) }
 					</Link>
 				</Typography>
 			) }
@@ -108,6 +108,9 @@ InstallPluginButton.propTypes = {
 	notificationId: PropTypes.string.isRequired,
 	installLabel: PropTypes.string.isRequired,
 	activateLabel: PropTypes.string,
+	errorText: PropTypes.string,
+	postInstallLink: PropTypes.string,
+	postInstallText: PropTypes.string,
 };
 
 export const WhatsNewItem = ( { item, itemIndex, itemsLength, setIsOpen } ) => {
@@ -180,6 +183,9 @@ export const WhatsNewItem = ( { item, itemIndex, itemsLength, setIsOpen } ) => {
 						notificationId={ item.id }
 						installLabel={ item.installLabel || item.cta || __( 'Install Plugin', 'elementor' ) }
 						activateLabel={ item.ctaActivate }
+						errorText={ item.installErrorText }
+						postInstallLink={ item.postInstallLink }
+						postInstallText={ item.postInstallText }
 					/>
 				</Box>
 			) : item.cta && item.ctaLink && (
