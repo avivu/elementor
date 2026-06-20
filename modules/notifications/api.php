@@ -19,6 +19,7 @@ class API {
 		'pojo-accessibility',
 		'cookiez',
 		'manage',
+		'angie',
 	];
 
 	public static function get_notifications_by_conditions( $force_request = false ) {
