@@ -22,13 +22,13 @@ const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabe
 			const plugins = await wp.apiFetch( { path: '/wp/v2/plugins' } );
 			const plugin = plugins.find( ( p ) => p.plugin.startsWith( slug + '/' ) );
 
-			if ( plugin && 'active' === plugin.status ) {
-				setStatus( 'done' );
-				dismissCard();
+			if ( ! plugin ) {
+				setStatus( 'error' );
+				setErrorMsg( errorText || __( 'Plugin not found.', 'elementor' ) );
 				return;
 			}
 
-			if ( plugin ) {
+			if ( 'active' !== plugin.status ) {
 				await wp.apiFetch( {
 					path: `/wp/v2/plugins/${ encodeURIComponent( plugin.plugin ) }`,
 					method: 'POST',

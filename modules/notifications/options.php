@@ -16,7 +16,7 @@ class Options {
 			$notifications = API::get_notifications_by_conditions();
 			$notifications_ids = wp_list_pluck( $notifications, 'id' );
 
-			$unread_notifications = array_diff( $notifications_ids, static::get_notifications_dismissed() );
+			$unread_notifications = array_diff( $notifications_ids, static::get_notifications_dismissed(), static::get_notifications_installed() );
 
 			set_transient( "elementor_unread_notifications_{$current_user->ID}", $unread_notifications, HOUR_IN_SECONDS );
 		}
@@ -43,7 +43,7 @@ class Options {
 	public static function get_notifications_installed(): array {
 		$current_user = wp_get_current_user();
 
-		if ( ! $current_user ) {
+		if ( ! $current_user->exists() ) {
 			return [];
 		}
 
@@ -55,7 +55,7 @@ class Options {
 	public static function mark_notification_installed( string $notification_id ): bool {
 		$current_user = wp_get_current_user();
 
-		if ( ! $current_user ) {
+		if ( ! $current_user->exists() ) {
 			return false;
 		}
 
