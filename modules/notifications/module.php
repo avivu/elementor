@@ -40,7 +40,7 @@ class Module extends BaseModule {
 				$this->get_app_js_config()
 			);
 
-			wp_set_script_translations( 'e-editor-notifications', 'elementor' );
+			wp_set_script_translations( 'e-admin-notifications', 'elementor' );
 		}, 5 /* Before Elementor's admin enqueue scripts */ );
 
 		add_action( 'elementor/editor/v2/scripts/enqueue', [ $this, 'enqueue_editor_scripts' ] );
@@ -84,13 +84,44 @@ class Module extends BaseModule {
 
 	public function register_ajax_actions( $ajax ) {
 		$ajax->register_ajax_action( 'notifications_get', [ $this, 'ajax_get_notifications' ] );
+		$ajax->register_ajax_action( 'notifications_mark_installed', [ $this, 'ajax_mark_notification_installed' ] );
 	}
 
 	public function ajax_get_notifications() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			throw new \Exception( 'Insufficient permissions' );
+		}
+
 		$notifications = API::get_notifications_by_conditions( true );
+
+		$is_admin = current_user_can( 'manage_options' );
+
+		$installed = Options::get_notifications_installed();
+		$notifications = array_values( array_filter( $notifications, function( $n ) use ( $installed, $is_admin ) {
+			if ( ! empty( $n['installPlugin'] ) && ! $is_admin ) {
+				return false;
+			}
+			return ! in_array( $n['id'], $installed, true );
+		} ) );
 
 		Options::mark_notification_read( $notifications );
 
 		return $notifications;
+	}
+
+	public function ajax_mark_notification_installed( $data ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			throw new \Exception( 'Insufficient permissions' );
+		}
+
+		$notification_id = sanitize_text_field( $data['notification_id'] ?? '' );
+
+		if ( empty( $notification_id ) ) {
+			throw new \Exception( 'Missing notification_id' );
+		}
+
+		Options::mark_notification_installed( $notification_id );
+
+		return true;
 	}
 }

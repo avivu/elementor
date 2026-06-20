@@ -1,8 +1,117 @@
+import { useState } from 'react';
+import { __ } from '@wordpress/i18n';
 import { Box, Button, Divider, Link, Typography } from '@elementor/ui';
 import { WhatsNewItemTopicLine } from './whats-new-item-topic-line';
 import { WrapperWithLink } from './wrapper-with-link';
 import { WhatsNewItemThumbnail } from './whats-new-item-thumbnail';
 import { WhatsNewItemChips } from './whats-new-item-chips';
+
+const InstallPluginButton = ( { slug, notificationId, installLabel, activateLabel, errorText, postInstallLink, postInstallText } ) => {
+	const [ status, setStatus ] = useState( 'idle' ); // Idle | installing | activating | done | error
+	const [ errorMsg, setErrorMsg ] = useState( '' );
+
+	const dismissCard = () => {
+		elementorCommon.ajax.addRequest( 'notifications_mark_installed', {
+			data: { notification_id: notificationId },
+		} );
+	};
+
+	const findAndActivate = async () => {
+		setStatus( 'activating' );
+		try {
+			const plugins = await wp.apiFetch( { path: '/wp/v2/plugins' } );
+			const plugin = plugins.find( ( p ) => p.plugin.startsWith( slug + '/' ) );
+
+			if ( ! plugin ) {
+				setStatus( 'error' );
+				setErrorMsg( errorText || __( 'Plugin not found.', 'elementor' ) );
+				return;
+			}
+
+			if ( 'active' !== plugin.status ) {
+				await wp.apiFetch( {
+					path: `/wp/v2/plugins/${ encodeURIComponent( plugin.plugin ) }`,
+					method: 'POST',
+					data: { status: 'active' },
+				} );
+			}
+
+			setStatus( 'done' );
+			dismissCard();
+		} catch ( err ) {
+			setStatus( 'error' );
+			setErrorMsg( errorText || err?.message || __( 'Activation failed', 'elementor' ) );
+		}
+	};
+
+	const handleInstall = async () => {
+		setStatus( 'installing' );
+		try {
+			await wp.apiFetch( {
+				path: '/wp/v2/plugins',
+				method: 'POST',
+				data: { slug, status: 'active' },
+			} );
+			setStatus( 'done' );
+			dismissCard();
+		} catch ( err ) {
+			// Plugin already installed — find it and activate
+			if ( 'folder_exists' === err?.code ) {
+				await findAndActivate();
+			} else {
+				setStatus( 'error' );
+				setErrorMsg( errorText || err?.message || __( 'Installation failed', 'elementor' ) );
+			}
+		}
+	};
+
+	const getButtonLabel = () => {
+		switch ( status ) {
+			case 'installing': return __( 'Installing...', 'elementor' );
+			case 'activating': return activateLabel || __( 'Activating...', 'elementor' );
+			case 'done': return __( 'Installed ✓', 'elementor' );
+			default: return installLabel;
+		}
+	};
+
+	const isDisabled = [ 'installing', 'activating', 'done' ].includes( status );
+
+	return (
+		<Box>
+			<Button
+				variant="contained"
+				size="small"
+				color="primary"
+				disabled={ isDisabled }
+				onClick={ ! isDisabled ? handleInstall : undefined }
+			>
+				{ getButtonLabel() }
+			</Button>
+			{ 'done' === status && postInstallLink && (
+				<Typography variant="caption" color="text.secondary" sx={ { display: 'block', mt: 0.5 } }>
+					<Link href={ postInstallLink } target="_blank" color="inherit" underline="always">
+						{ postInstallText || __( 'Explore and get started', 'elementor' ) }
+					</Link>
+				</Typography>
+			) }
+			{ 'error' === status && (
+				<Typography variant="caption" color="error.main" sx={ { display: 'block', mt: 0.5 } }>
+					{ errorMsg }
+				</Typography>
+			) }
+		</Box>
+	);
+};
+
+InstallPluginButton.propTypes = {
+	slug: PropTypes.string.isRequired,
+	notificationId: PropTypes.string.isRequired,
+	installLabel: PropTypes.string.isRequired,
+	activateLabel: PropTypes.string,
+	errorText: PropTypes.string,
+	postInstallLink: PropTypes.string,
+	postInstallText: PropTypes.string,
+};
 
 export const WhatsNewItem = ( { item, itemIndex, itemsLength, setIsOpen } ) => {
 	return (
@@ -67,7 +176,19 @@ export const WhatsNewItem = ( { item, itemIndex, itemsLength, setIsOpen } ) => {
 					) }
 				</Typography>
 			) }
-			{ item.cta && item.ctaLink && (
+			{ item.installPlugin ? (
+				<Box sx={ { pb: 2 } }>
+					<InstallPluginButton
+						slug={ item.installPlugin }
+						notificationId={ item.id }
+						installLabel={ item.installLabel || item.cta || __( 'Install Plugin', 'elementor' ) }
+						activateLabel={ item.ctaActivate }
+						errorText={ item.installErrorText }
+						postInstallLink={ item.postInstallLink }
+						postInstallText={ item.postInstallText }
+					/>
+				</Box>
+			) : item.cta && item.ctaLink && (
 				<Box
 					sx={ {
 						pb: 2,
