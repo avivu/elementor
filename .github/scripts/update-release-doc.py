@@ -78,10 +78,13 @@ INTERNAL_PREFIXES = (
     "fix:",
     "remove unused",
     "remove per-",
+    "remove deprecated",  # removing deprecated code is technical cleanup
     "bump ",
     "[research]",
     "research:",
     "research -",
+    "ci >",              # CI/infrastructure tasks (e.g. "CI > Release tag creation")
+    "ci/cd",
 )
 
 # Issues whose summary contains ANY of these substrings are excluded from the doc.
@@ -112,7 +115,8 @@ EXCLUDE_LABEL = "release-doc-skip"
 # in this doc (e.g. site planner, accessibility panel).
 ALWAYS_EXCLUDE_KEYWORDS = [
     "accessibility panel",
-    "planner",   # catches "site planner", "planner flow", etc.
+    "planner",      # catches "site planner", "planner flow", etc.
+    "experiment",   # feature-flag/experiment removal tasks — always internal infra
 ]
 
 # Additional filters applied only to child rows (tasks/stories under an Epic).
@@ -309,9 +313,14 @@ def extract_adf_text(adf, max_chars=200):
     return text
 
 
+_ROVO_ERROR_PATTERNS = (
+    "the request cannot be completed",
+    "the request can't be completed",
+)
+
 def extract_adf_paragraphs(adf):
     """Return list of plain-text strings, one per line (paragraph or hardBreak-separated).
-    Strips lines starting with 'Changelog:' since those are for the main table only."""
+    Strips lines starting with 'Changelog:' and Rovo generation error messages."""
     if not adf or not isinstance(adf, dict):
         return []
     lines = []
@@ -330,7 +339,11 @@ def extract_adf_paragraphs(adf):
         line = "".join(current).strip()
         if line:
             lines.append(line)
-    return [l for l in lines if not l.lower().startswith("changelog:")]
+    lines = [l for l in lines if not l.lower().startswith("changelog:")]
+    # If the first line is a Rovo generation error, discard all lines
+    if lines and any(p in lines[0].lower() for p in _ROVO_ERROR_PATTERNS):
+        return []
+    return lines
 
 
 def conf_request(method, path, body=None):
@@ -1434,6 +1447,30 @@ if existing:
     if status in (200, 204):
         print(f"✅ Updated: https://elementor.atlassian.net/wiki/spaces/{CONF_SPACE}/pages/{page_id}", file=sys.stderr)
         conf_set_page_status(page_id, page_state)
+        # Move released pages into "Past Releases" folder
+        if phase == 'released':
+            try:
+                siblings = conf_get(f"/rest/api/content/{CONF_PARENT}/child/page?limit=50")
+                past_releases = next(
+                    (c for c in siblings.get("results", [])
+                     if "past releases" in c.get("title", "").lower()), None
+                )
+                if past_releases:
+                    # Check if page is already under Past Releases (not a direct child of parent)
+                    page_info = conf_get(f"/rest/api/content/{page_id}?expand=ancestors")
+                    current_parent_id = page_info.get("ancestors", [{}])[-1].get("id", "") if page_info.get("ancestors") else ""
+                    if str(current_parent_id) != str(past_releases['id']):
+                        mv_status, _ = conf_request(
+                            "PUT", f"/rest/api/content/{page_id}/move/append/{past_releases['id']}"
+                        )
+                        if mv_status in (200, 204):
+                            print(f"  Moved into Past Releases folder", file=sys.stderr)
+                        else:
+                            print(f"  Warning: move to Past Releases returned {mv_status}", file=sys.stderr)
+                    else:
+                        print(f"  Already in Past Releases folder", file=sys.stderr)
+            except Exception as e:
+                print(f"  Warning: could not move to Past Releases — {e}", file=sys.stderr)
     else:
         print(f"❌ Update failed (status {status})", file=sys.stderr)
         sys.exit(1)

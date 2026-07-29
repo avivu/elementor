@@ -6,10 +6,14 @@ version numbers (e.g. 4.3.0, 4.1.5), and runs update-release-doc.py once per
 version (or once per tier for patch releases) via subprocess with FIXED_VERSION
 and FIXED_TIER set.
 
+Also includes recently released versions (GA released in the last 14 days) so
+their pages can be updated and moved to the Past Releases folder.
+
 Used by the scheduled GitHub Actions workflow on the fork (twice daily).
 The PR-triggered flow still calls update-release-doc.py directly.
 """
 import base64
+from datetime import datetime, timedelta, timezone
 import os
 import re
 import subprocess
@@ -49,20 +53,35 @@ def extract_version_number(name):
 
 
 def get_active_versions():
-    """Return (sorted list of unique unreleased base version numbers, all raw Jira versions)."""
+    """Return (sorted list of unique base version numbers to process, all raw Jira versions).
+
+    Includes:
+    - All unreleased versions (active work)
+    - Recently released versions (GA released in last 14 days) so their pages
+      can be moved to Past Releases folder
+    """
     all_versions = jira_get(f"/rest/api/3/project/{JIRA_PROJECT}/versions")
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).strftime("%Y-%m-%d")
     seen = set()
     active = []
     for v in all_versions:
-        if v.get("released"):
-            continue
         base = extract_version_number(v.get("name", ""))
         if not base or base in seen or base in _SKIP_VERSIONS:
             continue
         if tuple(int(x) for x in base.split(".")) < _MIN_VERSION:
             continue
-        seen.add(base)
-        active.append(base)
+        if v.get("released"):
+            # Include recently released GA versions (not betas)
+            rd = v.get("releaseDate", "")
+            name_lower = v.get("name", "").lower()
+            if "beta" in name_lower:
+                continue
+            if rd and rd >= cutoff:
+                seen.add(base)
+                active.append(base)
+        else:
+            seen.add(base)
+            active.append(base)
     # Sort ascending so patches come before majors
     active.sort(key=lambda s: tuple(int(x) for x in s.split(".")))
     return active, all_versions
@@ -112,10 +131,10 @@ def run_version(version, tier=None):
 def main():
     versions, all_jira_versions = get_active_versions()
     if not versions:
-        print("No active unreleased versions found — nothing to do.", file=sys.stderr)
+        print("No versions to process — nothing to do.", file=sys.stderr)
         sys.exit(0)
 
-    print(f"Active versions to process: {versions}", file=sys.stderr)
+    print(f"Versions to process: {versions}", file=sys.stderr)
     failed = []
 
     for version in versions:
