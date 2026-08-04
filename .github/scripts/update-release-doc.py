@@ -117,6 +117,8 @@ ALWAYS_EXCLUDE_KEYWORDS = [
     "accessibility panel",
     "planner",      # catches "site planner", "planner flow", etc.
     "experiment",   # feature-flag/experiment removal tasks — always internal infra
+    "minification",  # build process improvements (e.g. "JS Minification in Build")
+    "build process", # build tooling changes — not user-facing
 ]
 
 # Additional filters applied only to child rows (tasks/stories under an Epic).
@@ -604,7 +606,7 @@ if phase == 'released':
 jql += 'ORDER BY updated DESC'
 
 ISSUE_FIELDS = [
-    "summary", "status", "issuetype", "parent", "labels", "description",
+    "summary", "status", "resolution", "issuetype", "parent", "labels", "description",
     "fixVersions",
     "customfield_10127",   # Owner (user)
     "customfield_10459",   # Editor Team (select)
@@ -741,8 +743,9 @@ for issue in main_issues:
     f       = issue.get("fields", {})
     key     = issue["key"]
     summary = (f.get("summary") or "").strip()
-    itype   = (f.get("issuetype") or {}).get("name", "")
-    status  = (f.get("status") or {}).get("name", "")
+    itype      = (f.get("issuetype") or {}).get("name", "")
+    status     = (f.get("status") or {}).get("name", "")
+    resolution = (f.get("resolution") or {}).get("name", "")
     labels     = f.get("labels") or []
     fv_names   = [v["name"] for v in (f.get("fixVersions") or [])]
     parent     = (f.get("parent") or {}).get("key", "")
@@ -774,6 +777,7 @@ for issue in main_issues:
         "figma_url":      figma,
         "video_url":      video,
         "has_pr":         has_pr,
+        "resolution":     resolution,
         "confluence_url": conf_url,
         "team":           ", ".join(teams),
         "owner":          owner,
@@ -813,6 +817,7 @@ elif not FIXED_VERSION and not is_excluded(issue_summary, fields.get("labels", [
         "figma_url":      figma,
         "video_url":      video,
         "has_pr":         True,  # this ticket triggered the run, so a PR definitely exists
+        "resolution":     (fields.get("resolution") or {}).get("name", ""),
         "confluence_url": conf_url,
         "team":           ", ".join(t_teams),
         "owner":          t_owner,
@@ -821,6 +826,10 @@ elif not FIXED_VERSION and not is_excluded(issue_summary, fields.get("labels", [
 # Drop "To Do" issues that have no linked GitHub PR (not yet started)
 rows = {key: r for key, r in rows.items()
         if not ("to do" in r["status"].lower() and not r["has_pr"])}
+
+# Drop "Won't Do" issues that have no linked GitHub PR (cancelled work)
+rows = {key: r for key, r in rows.items()
+        if not ("won't do" in r.get("resolution", "").lower() and not r["has_pr"])}
 
 # Mark children of Epics in the list; they'll be shown indented under their parent
 epic_keys = {key for key, r in rows.items() if r["type"] == "Epic"}
