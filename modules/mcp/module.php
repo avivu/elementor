@@ -4,6 +4,7 @@ namespace Elementor\Modules\Mcp;
 
 use Elementor\Core\Base\Module as BaseModule;
 use Elementor\Core\Experiments\Manager as Experiments_Manager;
+use Elementor\MCP\Composer\Admin\Page as Mcp_Admin_Page;
 use Elementor\MCP\Composer\Mcp\Registry as Shared_Registry;
 use Elementor\Modules\EditorOne\Classes\Menu_Data_Provider;
 use Elementor\Modules\Mcp\Abilities\Abstract_Ability;
@@ -13,6 +14,7 @@ use Elementor\Modules\Mcp\Registry\Ability_Registry;
 use Elementor\Modules\Mcp\RestApi\Mcp_Proxy_REST_API;
 use Elementor\Modules\Mcp\Utils\Editor_Sync_State;
 use Elementor\Plugin;
+use Elementor\Utils;
 use WP\MCP\Core\McpAdapter;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,6 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Module extends BaseModule {
 
 	const ANALYTICS_REGISTRAR_HANDLE = 'elementor-mcp-analytics-registrar';
+	const PROMOTION_REGISTRAR_HANDLE = 'elementor-mcp-promotion-registrar';
 	const V3_STANDARDIZED_MAPS_EXPERIMENT_NAME = 'e_mcp_v3_standardized_maps';
 
 	private Ability_Registry $registry;
@@ -34,10 +37,32 @@ class Module extends BaseModule {
 		wp_enqueue_script(
 			self::ANALYTICS_REGISTRAR_HANDLE,
 			$this->get_js_assets_url( 'mcp-analytics-registrar' ),
-			[ 'elementor-common', \Elementor\MCP\Composer\Admin\Page::SCRIPT_HANDLE ],
+			[ 'elementor-common', Mcp_Admin_Page::SCRIPT_HANDLE ],
 			ELEMENTOR_VERSION,
 			true
 		);
+	}
+
+	public function enqueue_promotion_registrar(): void {
+		if ( ! class_exists( Utils::class ) || Utils::is_license_active() ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			self::PROMOTION_REGISTRAR_HANDLE,
+			$this->get_js_assets_url( 'mcp-promotion-registrar' ),
+			[
+				Mcp_Admin_Page::SCRIPT_HANDLE,
+				'react',
+				'react-dom',
+				'wp-i18n',
+				'elementor-v2-ui',
+			],
+			ELEMENTOR_VERSION,
+			true
+		);
+
+		wp_set_script_translations( self::PROMOTION_REGISTRAR_HANDLE, 'elementor' );
 	}
 
 	public static function is_active() {
