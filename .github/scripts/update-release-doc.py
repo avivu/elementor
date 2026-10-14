@@ -109,6 +109,11 @@ EXCLUDE_KEYWORDS = [
 
 # Issues tagged with this Jira label are excluded (for one-off per-issue exclusions).
 EXCLUDE_LABEL = "release-doc-skip"
+DOC_SKIP_LABEL = "doc-skip"          # shorter alias — use either label
+DOC_PUBLIC_LABEL = "doc-public"      # force-include in main table, bypass all filters
+
+# Issues tagged with "doc-group:ED-XXXXX" are rerouted under that epic.
+DOC_GROUP_PREFIX = "doc-group:"
 
 # Keywords that exclude issues from BOTH the main table AND the internal section.
 # Use for product areas that are never relevant to any external or internal stakeholder
@@ -437,6 +442,8 @@ def status_icon(name):
 
 
 def is_excluded(summary, labels):
+    if DOC_PUBLIC_LABEL in (labels or []):
+        return False  # always include, bypass all filters
     s = (summary or "").lower().strip()
     if any(s.startswith(p) for p in INTERNAL_PREFIXES):
         return True
@@ -444,7 +451,7 @@ def is_excluded(summary, labels):
         return True
     if any(kw.lower() in s for kw in EXCLUDE_KEYWORDS):
         return True
-    if EXCLUDE_LABEL in (labels or []):
+    if EXCLUDE_LABEL in (labels or []) or DOC_SKIP_LABEL in (labels or []):
         return True
     return False
 
@@ -456,7 +463,7 @@ def is_internal_stakeholder(summary, labels):
     s = (summary or "").lower().strip()
     if any(s.startswith(p) for p in INTERNAL_PREFIXES):
         return False  # purely technical — drop entirely
-    if EXCLUDE_LABEL in (labels or []):
+    if EXCLUDE_LABEL in (labels or []) or DOC_SKIP_LABEL in (labels or []):
         return False  # explicitly flagged to skip
     if any(kw.lower() in s for kw in ALWAYS_EXCLUDE_KEYWORDS):
         return False  # never show anywhere
@@ -782,6 +789,7 @@ for issue in main_issues:
         "team":           ", ".join(teams),
         "owner":          owner,
         "has_rovo_desc":  bool(rovo_paras),
+        "labels":         labels,
     }
 
 # Enrich the merged PR's ticket with PR summary bullets (PR-triggered runs only)
@@ -821,6 +829,7 @@ elif not FIXED_VERSION and not is_excluded(issue_summary, fields.get("labels", [
         "confluence_url": conf_url,
         "team":           ", ".join(t_teams),
         "owner":          t_owner,
+        "labels":         fields.get("labels") or [],
     }
 
 # Drop "To Do" issues that have no linked GitHub PR (not yet started)
@@ -830,6 +839,55 @@ rows = {key: r for key, r in rows.items()
 # Drop "Won't Do" issues that have no linked GitHub PR (cancelled work)
 rows = {key: r for key, r in rows.items()
         if not ("won't do" in r.get("resolution", "").lower() and not r["has_pr"])}
+
+# ── doc-group: label — reroute issues under a specified epic ─────────────────
+def _doc_group_target(labels):
+    """Return the target epic key from a 'doc-group:ED-XXXXX' label, or None."""
+    for lbl in (labels or []):
+        if lbl.lower().startswith(DOC_GROUP_PREFIX):
+            return lbl[len(DOC_GROUP_PREFIX):].strip().upper()
+    return None
+
+doc_group_targets = set()
+for r in rows.values():
+    target = _doc_group_target(r.get("labels", []))
+    if target:
+        r["parent"] = target
+        doc_group_targets.add(target)
+
+# Fetch any target epics that aren't already in rows
+for epic_key in doc_group_targets:
+    if epic_key not in rows:
+        try:
+            ep = jira_get(f"/rest/api/3/issue/{epic_key}",
+                          {"fields": "summary,issuetype,fixVersions,labels,status"})
+            ef = ep.get("fields", {})
+            ep_summary = ef.get("summary", epic_key)
+            ep_fv_names = [v["name"] for v in (ef.get("fixVersions") or [])]
+            rows[epic_key] = {
+                "key":            epic_key,
+                "feature":        ep_summary,
+                "description":    "",
+                "version":        fix_version,
+                "tier":           get_tier(ep_fv_names),
+                "topic":          get_topic(ep_summary),
+                "status":         status_icon((ef.get("status") or {}).get("name", "")),
+                "type":           "Epic",
+                "jira_url":       f"{JIRA_BASE}/browse/{epic_key}",
+                "parent":         "",
+                "figma_url":      None,
+                "video_url":      None,
+                "has_pr":         False,
+                "resolution":     "",
+                "confluence_url": None,
+                "team":           "",
+                "owner":          "",
+                "has_rovo_desc":  False,
+                "labels":         ef.get("labels") or [],
+            }
+            print(f"  doc-group: fetched epic {epic_key}: {ep_summary}", file=sys.stderr)
+        except Exception as e:
+            print(f"  doc-group: could not fetch {epic_key}: {e}", file=sys.stderr)
 
 # Mark children of Epics in the list; they'll be shown indented under their parent
 epic_keys = {key for key, r in rows.items() if r["type"] == "Epic"}
@@ -861,8 +919,8 @@ for r in top_level:
     if r["type"] == "Epic":
         children = [c for c in rows.values()
                     if c["is_child"] and c["parent"] == r["key"]
-                    and c.get("has_rovo_desc")
-                    and not is_child_technical(c["feature"])]
+                    and (DOC_PUBLIC_LABEL in c.get("labels", [])
+                         or (c.get("has_rovo_desc") and not is_child_technical(c["feature"])))]
         children.sort(key=lambda c: (status_sort_key(c["status"]), c["key"]))
         sorted_rows.extend(children)
 
