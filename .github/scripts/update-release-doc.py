@@ -121,9 +121,10 @@ DOC_GROUP_PREFIX = "doc-group:"
 ALWAYS_EXCLUDE_KEYWORDS = [
     "accessibility panel",
     "planner",      # catches "site planner", "planner flow", etc.
-    "experiment",   # feature-flag/experiment removal tasks — always internal infra
     "minification",  # build process improvements (e.g. "JS Minification in Build")
     "build process", # build tooling changes — not user-facing
+    # NOTE: "experiment" removed — too broad, catches product features named "experiment"
+    # "experiments status" is already in INTERNAL_PREFIXES (starts-with check)
 ]
 
 # Additional filters applied only to child rows (tasks/stories under an Epic).
@@ -150,6 +151,8 @@ CHILD_INTERNAL_PREFIXES = (
     "set ",
     "get ",
     "fix ",
+    "tweak ",    # catches "Tweak [V4]: ..." style summaries
+    "tweak:",
 )
 CHILD_EXCLUDE_KEYWORDS = [
     "mcp-proxy",
@@ -184,11 +187,14 @@ def is_child_technical(summary):
 # Format: (keywords_list, display_name, header_background_color)
 TOPIC_RULES = [
     # (keywords, display_name, hex_color, confluence_colorname)
-    (["ai", "angie", "mcp", "design system", "composition", "copilot"],
+    (["ai", "angie", "mcp", "design system", "composition", "copilot", "agent"],
      "AI Experience",    "#e6d9f3", "Light purple"),
 
     (["atomic", "accordion", "background video", "css grid", "html tag",
-      "form element", "slider", "tabs widget", "loop"],
+      "form element", "slider", "tabs widget", "loop",
+      "carousel", "icon library", "v4 element", "v4 widget",
+      "base style", "component variant", "import export", "interactive component",
+      "button", "list element", "nav menu", "gallery", "off-canvas"],
      "Atomic Editor",    "#deebff", "Light blue"),
 
     (["performance", "optimization", "canvas load", "lcp", "ttfb"],
@@ -475,7 +481,7 @@ def is_internal_stakeholder(summary, labels):
 FIXED_VERSION = os.environ.get("FIXED_VERSION", "").strip()
 
 if FIXED_VERSION:
-    fix_version   = FIXED_VERSION
+    fix_version   = extract_version_number(FIXED_VERSION) or FIXED_VERSION
     issue_type    = "Epic"   # not used in scan-all mode
     issue_summary = ""
     status_name   = ""
@@ -836,7 +842,8 @@ elif not FIXED_VERSION and not is_excluded(issue_summary, fields.get("labels", [
 rows = {key: r for key, r in rows.items()
         if not ("to do" in r["status"].lower() and not r["has_pr"])}
 
-# Drop "Won't Do" issues that have no linked GitHub PR (cancelled work)
+# Drop "Won't Do" issues that have no linked GitHub PR (cancelled work).
+# Won't Do + has PR = developer may have mis-resolved; the code shipped so keep it.
 rows = {key: r for key, r in rows.items()
         if not ("won't do" in r.get("resolution", "").lower() and not r["has_pr"])}
 
@@ -889,6 +896,127 @@ for epic_key in doc_group_targets:
         except Exception as e:
             print(f"  doc-group: could not fetch {epic_key}: {e}", file=sys.stderr)
 
+# Auto-fetch parent Epics that aren't in rows (Epic has no fix version but its children do).
+# This ensures stories/tasks are grouped under their Epic even when the Epic itself
+# isn't assigned to the release version in Jira.
+_missing_parents = {
+    r["parent"] for r in rows.values()
+    if r["type"] in {"Story", "Task"} and r["parent"] and r["parent"] not in rows
+}
+for epic_key in _missing_parents:
+    try:
+        ep = jira_get(f"/rest/api/3/issue/{epic_key}",
+                      {"fields": "summary,issuetype,fixVersions,labels,status,"
+                                 "customfield_10127,customfield_10459,customfield_19347,description"})
+        ef = ep.get("fields", {})
+        if (ef.get("issuetype") or {}).get("name") != "Epic":
+            continue
+        ep_summary  = (ef.get("summary") or epic_key).strip()
+        ep_labels   = ef.get("labels") or []
+        ep_fv_names = [v["name"] for v in (ef.get("fixVersions") or [])]
+        # Only auto-fetch Epics with NO fix version. If the Epic belongs to a
+        # different release, respect that — its children should not appear here.
+        if ep_fv_names:
+            print(f"  skipping auto-fetch of {epic_key} — belongs to {ep_fv_names}", file=sys.stderr)
+            continue
+        if is_excluded(ep_summary, ep_labels):
+            continue
+        rovo_paras   = extract_adf_paragraphs(ef.get("customfield_19347"))
+        feature_text = rovo_paras[0] if rovo_paras else ep_summary
+        rows[epic_key] = {
+            "key":            epic_key,
+            "feature":        feature_text,
+            "description":    "",
+            "version":        fix_version,
+            "tier":           get_tier(ep_fv_names) if ep_fv_names else get_tier(matching_version_names),
+            "topic":          get_topic(ep_summary),
+            "status":         status_icon((ef.get("status") or {}).get("name", "")),
+            "type":           "Epic",
+            "jira_url":       f"{JIRA_BASE}/browse/{epic_key}",
+            "parent":         "",
+            "figma_url":      None,
+            "video_url":      None,
+            "has_pr":         False,
+            "resolution":     "",
+            "confluence_url": None,
+            "team":           ", ".join(t["value"] for t in (ef.get("customfield_10459") or [])),
+            "owner":          (ef.get("customfield_10127") or {}).get("displayName", ""),
+            "has_rovo_desc":  bool(rovo_paras),
+            "labels":         ep_labels,
+        }
+        print(f"  auto-fetched parent epic {epic_key}: {ep_summary}", file=sys.stderr)
+    except Exception as e:
+        print(f"  could not auto-fetch parent epic {epic_key}: {e}", file=sys.stderr)
+
+# Fetch active (non-To-Do) children of Epics in the doc that have a different fix
+# version. Example: Epic is v4.5, child fix version is v4.4 but work has started —
+# the child follows the Epic. Children still in "To Do" are excluded (not started).
+_epic_keys_now = [key for key, r in rows.items() if r["type"] == "Epic"]
+if _epic_keys_now:
+    _parent_filter = ", ".join(f'"{k}"' for k in _epic_keys_now)
+    _active_jql = (
+        f'project = {JIRA_PROJECT} AND issuetype in (Story, Task) '
+        f'AND parent in ({_parent_filter}) AND status != "To Do" '
+        f'ORDER BY updated DESC'
+    )
+    try:
+        _active_children = jira_search(_active_jql, ISSUE_FIELDS)
+        for issue in _active_children:
+            key = issue["key"]
+            if key in rows:
+                continue  # already fetched via main JQL
+            f       = issue.get("fields", {})
+            summary = (f.get("summary") or "").strip()
+            labels  = f.get("labels") or []
+            if is_excluded(summary, labels):
+                continue
+            itype      = (f.get("issuetype") or {}).get("name", "")
+            status     = (f.get("status") or {}).get("name", "")
+            resolution = (f.get("resolution") or {}).get("name", "")
+            fv_names   = [v["name"] for v in (f.get("fixVersions") or [])]
+            # Skip children explicitly assigned to a different version (any status)
+            if fv_names and all(extract_version_number(v) != fix_version for v in fv_names):
+                print(f"  skipping active child {key} — assigned to {fv_names}", file=sys.stderr)
+                continue
+            parent     = (f.get("parent") or {}).get("key", "")
+            owner      = (f.get("customfield_10127") or {}).get("displayName", "")
+            teams      = [t["value"] for t in (f.get("customfield_10459") or [])]
+            jira_desc  = extract_adf_text(f.get("description"))
+            rovo_paras = extract_adf_paragraphs(f.get("customfield_19347"))
+            if rovo_paras:
+                feature_text = rovo_paras[0]
+                desc_text    = " ".join(rovo_paras[1:]) if len(rovo_paras) > 1 else jira_desc
+            else:
+                feature_text = summary
+                desc_text    = jira_desc
+            figma, video, has_pr, conf_url = get_remote_links(key)
+            time.sleep(0.2)
+            rows[key] = {
+                "key":               key,
+                "feature":           feature_text,
+                "description":       desc_text,
+                "version":           fix_version,
+                "tier":              get_tier(fv_names) if fv_names else get_tier(matching_version_names),
+                "topic":             get_topic(summary),
+                "status":            status_icon(status),
+                "type":              itype,
+                "jira_url":          f"{JIRA_BASE}/browse/{key}",
+                "parent":            parent,
+                "figma_url":         figma,
+                "video_url":         video,
+                "has_pr":            has_pr,
+                "resolution":        resolution,
+                "confluence_url":    conf_url,
+                "team":              ", ".join(teams),
+                "owner":             owner,
+                "has_rovo_desc":     bool(rovo_paras),
+                "labels":            labels,
+                "is_active_child":   True,  # fetched because Epic is in release, not fix version
+            }
+            print(f"  active child fetched {key} (fix={fv_names}): {summary}", file=sys.stderr)
+    except Exception as e:
+        print(f"  active children fetch failed: {e}", file=sys.stderr)
+
 # Mark children of Epics in the list; they'll be shown indented under their parent
 epic_keys = {key for key, r in rows.items() if r["type"] == "Epic"}
 for r in rows.values():
@@ -910,7 +1038,7 @@ def topic_sort_key(r):
     except: ti = len(topic_order)
     return (ti, status_sort_key(r["status"]), r["key"])
 
-top_level = [r for r in rows.values() if not r["is_child"]]
+top_level = [r for r in rows.values() if not r["is_child"] and r["type"] == "Epic"]
 top_level.sort(key=topic_sort_key)
 
 sorted_rows = []
@@ -920,6 +1048,7 @@ for r in top_level:
         children = [c for c in rows.values()
                     if c["is_child"] and c["parent"] == r["key"]
                     and (DOC_PUBLIC_LABEL in c.get("labels", [])
+                         or (c.get("is_active_child") and not is_child_technical(c["feature"]))
                          or (c.get("has_rovo_desc") and not is_child_technical(c["feature"])))]
         children.sort(key=lambda c: (status_sort_key(c["status"]), c["key"]))
         sorted_rows.extend(children)
