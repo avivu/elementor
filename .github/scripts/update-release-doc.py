@@ -847,7 +847,7 @@ elif not FIXED_VERSION and not is_excluded(issue_summary, fields.get("labels", [
         "status":         status_icon(status_name),
         "type":           issue_type,
         "jira_url":       f"{JIRA_BASE}/browse/{ticket}",
-        "parent":         (fields.get("parent") or {}).get("key", ""),
+        "parent":         epic_parent_key(fields),
         "figma_url":      figma,
         "video_url":      video,
         "has_pr":         True,  # this ticket triggered the run, so a PR definitely exists
@@ -934,16 +934,10 @@ for epic_key in _missing_parents:
         ep_summary  = (ef.get("summary") or epic_key).strip()
         ep_labels   = ef.get("labels") or []
         ep_fv_names = [v["name"] for v in (ef.get("fixVersions") or [])]
-        # Only auto-fetch Epics with NO fix version. If the Epic belongs to a
-        # different release, respect that — its children should not appear here.
-        if ep_fv_names:
-            on_this_release = any(
-                extract_version_number(v) == fix_version for v in ep_fv_names
-            )
-            if not on_this_release:
-                print(f"  skipping auto-fetch of {epic_key} — belongs to {ep_fv_names}", file=sys.stderr)
-                continue
-        if is_excluded(ep_summary, ep_labels):
+        continued_from = earlier_release(ep_fv_names, fix_version) if ep_fv_names else ""
+        # Children on this release reference this epic — fetch for grouping even when the
+        # epic fixVersion is a later release line (e.g. ED-25657 on 4.5, tasks on 4.4).
+        if EXCLUDE_LABEL in ep_labels or DOC_SKIP_LABEL in ep_labels:
             continue
         rovo_paras   = extract_adf_paragraphs(ef.get("customfield_19347"))
         feature_text = rovo_paras[0] if rovo_paras else ep_summary
