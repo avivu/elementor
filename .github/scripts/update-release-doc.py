@@ -114,6 +114,7 @@ DOC_PUBLIC_LABEL = "doc-public"      # force-include in main table, bypass all f
 
 # Issues tagged with "doc-group:ED-XXXXX" are rerouted under that epic.
 DOC_GROUP_PREFIX = "doc-group:"
+EPIC_LINK_FIELD = "customfield_10014"
 
 # Keywords that exclude issues from BOTH the main table AND the internal section.
 # Use for product areas that are never relevant to any external or internal stakeholder
@@ -447,6 +448,22 @@ def status_icon(name):
     return name.title()
 
 
+def epic_parent_key(fields):
+    parent_key = (fields.get("parent") or {}).get("key", "")
+    if parent_key:
+        return parent_key
+    epic_link = fields.get(EPIC_LINK_FIELD)
+    if isinstance(epic_link, dict):
+        return (epic_link.get("key") or epic_link.get("value") or "").strip().upper()
+    if isinstance(epic_link, str):
+        return epic_link.strip().upper()
+    return ""
+
+
+def doc_status_excluded(status_name):
+    return "backlog" in (status_name or "").lower()
+
+
 def is_excluded(summary, labels):
     if DOC_PUBLIC_LABEL in (labels or []):
         return False  # always include, bypass all filters
@@ -621,9 +638,10 @@ jql += 'ORDER BY updated DESC'
 ISSUE_FIELDS = [
     "summary", "status", "resolution", "issuetype", "parent", "labels", "description",
     "fixVersions",
-    "customfield_10127",   # Owner (user)
-    "customfield_10459",   # Editor Team (select)
-    "customfield_19347",   # Release Doc Description (Rovo-generated)
+    "customfield_10014",
+    "customfield_10127",
+    "customfield_10459",
+    "customfield_19347",
 ]
 raw_issues = jira_search(jql, ISSUE_FIELDS)
 print(f"Found {len(raw_issues)} issues for {fix_version} (free + pro)", file=sys.stderr)
@@ -710,7 +728,7 @@ if _is_patch_release:
 # Build parent→children map from all raw issues (used to check Epic progress)
 _raw_children_by_parent = {}
 for _i in raw_issues:
-    _pk = (_i.get("fields", {}).get("parent") or {}).get("key", "")
+    _pk = epic_parent_key(_i.get("fields", {}))
     if _pk:
         _raw_children_by_parent.setdefault(_pk, []).append(_i)
 
@@ -724,7 +742,7 @@ for _issue in internal_issues:
     if _type == "Epic" and not _raw_children_by_parent.get(_key):
         try:
             _extra = jira_search(
-                f'project={JIRA_PROJECT} AND parent={_key} ORDER BY updated DESC',
+                f'project={JIRA_PROJECT} AND (parent={_key} OR "Epic Link" = {_key}) ORDER BY updated DESC',
                 _CHILD_EXTRA_FIELDS, max_results=10
             )
             if _extra:
@@ -758,10 +776,12 @@ for issue in main_issues:
     summary = (f.get("summary") or "").strip()
     itype      = (f.get("issuetype") or {}).get("name", "")
     status     = (f.get("status") or {}).get("name", "")
+    if doc_status_excluded(status):
+        continue
     resolution = (f.get("resolution") or {}).get("name", "")
     labels     = f.get("labels") or []
     fv_names   = [v["name"] for v in (f.get("fixVersions") or [])]
-    parent     = (f.get("parent") or {}).get("key", "")
+    parent     = epic_parent_key(f)
     owner      = (f.get("customfield_10127") or {}).get("displayName", "")
     teams      = [t["value"] for t in (f.get("customfield_10459") or [])]
 
@@ -917,8 +937,12 @@ for epic_key in _missing_parents:
         # Only auto-fetch Epics with NO fix version. If the Epic belongs to a
         # different release, respect that — its children should not appear here.
         if ep_fv_names:
-            print(f"  skipping auto-fetch of {epic_key} — belongs to {ep_fv_names}", file=sys.stderr)
-            continue
+            on_this_release = any(
+                extract_version_number(v) == fix_version for v in ep_fv_names
+            )
+            if not on_this_release:
+                print(f"  skipping auto-fetch of {epic_key} — belongs to {ep_fv_names}", file=sys.stderr)
+                continue
         if is_excluded(ep_summary, ep_labels):
             continue
         rovo_paras   = extract_adf_paragraphs(ef.get("customfield_19347"))
@@ -956,7 +980,8 @@ if _epic_keys_now:
     _parent_filter = ", ".join(f'"{k}"' for k in _epic_keys_now)
     _active_jql = (
         f'project = {JIRA_PROJECT} AND issuetype in (Story, Task) '
-        f'AND parent in ({_parent_filter}) AND status != "To Do" '
+        f'AND (parent in ({_parent_filter}) OR "Epic Link" in ({_parent_filter})) '
+        f'AND status not in ("To Do", "Backlog") '
         f'ORDER BY updated DESC'
     )
     try:
@@ -972,13 +997,15 @@ if _epic_keys_now:
                 continue
             itype      = (f.get("issuetype") or {}).get("name", "")
             status     = (f.get("status") or {}).get("name", "")
+            if doc_status_excluded(status):
+                continue
             resolution = (f.get("resolution") or {}).get("name", "")
             fv_names   = [v["name"] for v in (f.get("fixVersions") or [])]
             # Skip children explicitly assigned to a different version (any status)
             if fv_names and all(extract_version_number(v) != fix_version for v in fv_names):
                 print(f"  skipping active child {key} — assigned to {fv_names}", file=sys.stderr)
                 continue
-            parent     = (f.get("parent") or {}).get("key", "")
+            parent     = epic_parent_key(f)
             owner      = (f.get("customfield_10127") or {}).get("displayName", "")
             teams      = [t["value"] for t in (f.get("customfield_10459") or [])]
             jira_desc  = extract_adf_text(f.get("description"))
