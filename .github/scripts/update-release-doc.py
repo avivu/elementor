@@ -592,14 +592,14 @@ _version_links_line = (f'<p><strong>Jira:</strong> {_version_links_html}</p>\n'
 
 
 # ── Step 4: Get ALL user-facing issues for this version ──────────────────────
-# During beta: only query unreleased betas (show beta-ready content only)
-if phase == 'draft':
-    query_version_names = [
-        v["name"] for v in matching_versions
-        if 'beta' in v.get('name', '').lower() and not v.get('released', False)
-    ] or matching_version_names
-else:
-    query_version_names = matching_version_names
+# Full release-line consolidation: every Jira fixVersion whose number is fix_version
+# (Core/Pro, all betas whether released in Jira or not, and GA when it exists).
+# Do not drop items when an earlier beta is closed — the doc is cumulative for X.Y.Z.
+query_version_names = (
+    list(matching_version_names)
+    if matching_version_names
+    else ([FIXED_VERSION] if FIXED_VERSION else [fix_version_jira])
+)
 
 # For patch releases: filter query to anchor tier so a Pro-only patch doesn't pull free tickets
 if _is_patch_release_early:
